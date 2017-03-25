@@ -28,7 +28,7 @@
 #include "inet_hal.h"
 #include "intorobot_macros.h"
 
-//#define WIRING_TCPCLIENT_DEBUG
+#define WIRING_TCPCLIENT_DEBUG
 
 #ifdef WIRING_TCPCLIENT_DEBUG
 #define WTCPCLIENT_DEBUG(...)  do {DEBUG(__VA_ARGS__);}while(0)

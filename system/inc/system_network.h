@@ -79,6 +79,8 @@ bool network_has_credentials(network_handle_t network, uint32_t param1, void* re
 
 #include "wlan_hal.h"
 typedef WLanCredentials NetworkCredentials;
+typedef WLanApConfigs NetworkApConfigs;
+typedef WLanApInfos NetworkApInfos;
 
 /**
  *
@@ -93,6 +95,11 @@ bool network_clear_credentials(network_handle_t network, uint32_t flags, Network
 
 void network_setup(network_handle_t network, uint32_t flags, void* reserved);
 void manage_ip_config();
+
+// add ap interface
+int network_set_ap_configs(network_handle_t network, uint32_t, NetworkApConfigs* configs, void*);
+int network_set_ap_infos(network_handle_t network, uint32_t, NetworkApInfos* infos, void*);
+void network_ap_disconnect(network_handle_t network, uint32_t param, void* reserved);
 
 /**
  * Disable automatic listening mode when no credentials are configured.

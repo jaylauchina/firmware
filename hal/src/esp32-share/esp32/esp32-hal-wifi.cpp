@@ -37,6 +37,18 @@ extern "C" {
 
 #include "esp32-hal-wifi.h"
 
+#define ESP32_HAL_WIFI_DEBUG
+
+#ifdef ESP32_HAL_WIFI_DEBUG
+#define HALWIFI_DEBUG(...)  do {DEBUG(__VA_ARGS__);}while(0)
+#define HALWIFI_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
+#else
+#define HALWIFI_DEBUG(...)
+#define HALWIFI_DEBUG_D(...)
+#endif
+
+
+
 static ScanDoneCb _scanDoneCb = NULL;
 static wl_status_t _wifiStatus;
 
@@ -46,7 +58,7 @@ static volatile uint32_t esp32_wifi_timeout_duration;
 inline void ARM_WIFI_TIMEOUT(uint32_t dur) {
     esp32_wifi_timeout_start = HAL_Timer_Get_Milli_Seconds();
     esp32_wifi_timeout_duration = dur;
-    //DEBUG("esp32 WIFI WD Set %d",(dur));
+    HALWIFI_DEBUG("esp32 WIFI WD Set %d",(dur));
 }
 inline bool IS_WIFI_TIMEOUT() {
     return esp32_wifi_timeout_duration && ((HAL_Timer_Get_Milli_Seconds()-esp32_wifi_timeout_start)>esp32_wifi_timeout_duration);
@@ -54,7 +66,7 @@ inline bool IS_WIFI_TIMEOUT() {
 
 inline void CLR_WIFI_TIMEOUT() {
     esp32_wifi_timeout_duration = 0;
-    //DEBUG("esp32 WIFI WD Cleared, was %d", esp32_wifi_timeout_duration);
+    HALWIFI_DEBUG("esp32 WIFI WD Cleared, was %d", esp32_wifi_timeout_duration);
 }
 
 static void _setStatus(wl_status_t status)
@@ -89,11 +101,10 @@ static esp_err_t _eventCallback(void *arg, system_event_t *event)
         _setStatus(WL_NO_SHIELD);
     }
     else if(event->event_id == SYSTEM_EVENT_STA_GOT_IP) {
-        //DEBUG("SYSTEM_EVENT_STA_GOT_IP");
+        HALWIFI_DEBUG("SYSTEM_EVENT_STA_GOT_IP");
         tcpip_adapter_ip_info_t ip;
         tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip);
-        //DEBUG("%x", ip.ip.addr);
-
+        HALWIFI_DEBUG("%x", ip.ip.addr);
         _setStatus(WL_CONNECTED);
     }
     return ESP_OK;
@@ -107,6 +118,7 @@ static bool wifiLowLevelInit(){
         wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
         esp_err_t err = esp_wifi_init(&cfg);
         if(err){
+            HALWIFI_DEBUG("esp_wifi_init = %d", err);
             return false;
         }
         esp_wifi_set_storage(WIFI_STORAGE_FLASH);
@@ -155,8 +167,7 @@ static bool espWiFiStop() {
 
 void esp32_setScanDoneCb(ScanDoneCb cb)
 {
-    if (cb != NULL)
-    {
+    if (cb != NULL) {
         _scanDoneCb = cb;
     }
 }
@@ -242,9 +253,10 @@ bool esp32_setDHCP(char enable)
 
 bool esp32_setAutoConnect(bool autoConnect)
 {
-    bool ret;
-    ret = esp_wifi_set_auto_connect(autoConnect);
-    return ret;
+    if(esp_wifi_set_auto_connect(autoConnect) == ESP_OK) {
+        return true;
+    }
+    return false;
 }
 
 bool esp32_getAutoConnect()
@@ -285,11 +297,11 @@ static bool _smartConfigDone = false;
 static void smartConfigCallback(uint32_t st, void* result)
 {
     smartconfig_status_t status = (smartconfig_status_t) st;
-    DEBUG("status = %d", status);
+    HALWIFI_DEBUG("status = %d", status);
     if (status == SC_STATUS_LINK) {
         wifi_sta_config_t *sta_conf = reinterpret_cast<wifi_sta_config_t *>(result);
-        DEBUG("ssid     = %s", sta_conf->ssid);
-        DEBUG("password = %s", sta_conf->password);
+        HALWIFI_DEBUG("ssid     = %s", sta_conf->ssid);
+        HALWIFI_DEBUG("password = %s", sta_conf->password);
         esp_wifi_set_config(WIFI_IF_STA, (wifi_config_t *)sta_conf);
         esp_wifi_connect();
     } else if (status == SC_STATUS_LINK_OVER) {

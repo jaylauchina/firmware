@@ -25,11 +25,21 @@
 #include "wiring_tcpserver.h"
 #include "wiring_network.h"
 
+#define WIRING_TCPSERVER_DEBUG
+
+#ifdef WIRING_TCPSERVER_DEBUG
+#define WTCPSERVER_DEBUG(...)  do {DEBUG(__VA_ARGS__);}while(0)
+#define WTCPSERVER_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
+#else
+#define WTCPSERVER_DEBUG(...)
+#define WTCPSERVER_DEBUG_D(...)
+#endif
+
+
 using namespace intorobot;
 
 class TCPServerClient : public TCPClient
 {
-
 public:
 
     TCPServerClient(sock_handle_t sock) : TCPClient(sock) {}
@@ -52,6 +62,7 @@ TCPServer::TCPServer(uint16_t port, network_interface_t nif) : _port(port), _nif
 bool TCPServer::begin()
 {
     stop();
+
     if(!Network.from(_nif).ready())
     {
         return false;
@@ -63,14 +74,17 @@ bool TCPServer::begin()
     sock_result_t result = socket_create_tcp_server(_port, _nif);
     if (socket_handle_valid(result)) {
         _sock = result;
+        WTCPSERVER_DEBUG("tcp server create success! create socket %d", _sock);
         return true;
     }
+    WTCPSERVER_DEBUG("tcp server create failed!");
     stop();
     return false;
 }
 
 void TCPServer::stop()
 {
+    WTCPSERVER_DEBUG("tcp server stop! close socket %d", _sock);
     socket_close(_sock);
     _sock = socket_handle_invalid();
 }
@@ -99,10 +113,10 @@ TCPClient TCPServer::available()
     }
     else
     {
+        WTCPSERVER_DEBUG("tcp server accept success! socket %d", sock);
         TCPServerClient client = TCPServerClient(sock);
         client._remoteIP = client.remoteIP();      // fetch the peer IP ready for the copy operator
         _client = client;
-
     }
 
     return _client;

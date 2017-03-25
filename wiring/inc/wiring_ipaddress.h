@@ -26,6 +26,7 @@
 #include "wiring_string.h"
 #include "inet_hal.h"
 #include "intorobot_macros.h"
+#include "service_debug.h"
 
 /**
  * The IP address stored in host order.
@@ -63,6 +64,8 @@ public:
 
     // Overloaded cast operator to allow IPAddress objects to be used where a pointer
     // to a four-byte uint8_t array, uint32_t or another IPAddress object is expected.
+    operator uint32_t() const { return address.ipv4; }
+
     bool operator==(uint32_t address);
     bool operator==(const uint8_t* address);
     bool operator==(const IPAddress& address);
@@ -114,9 +117,9 @@ public:
 
     uint8_t version() const {
 #if HAL_IPv6
-    		return address.v;
+    return address.v;
 #else
-    		return 4;
+    return 4;
 #endif
     }
 

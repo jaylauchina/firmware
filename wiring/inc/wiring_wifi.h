@@ -141,7 +141,11 @@ public:
     }
 
     void setCredentials(const char *ssid, const char *password, unsigned long security, unsigned long cipher=WLAN_CIPHER_NOT_SET) {
-        setCredentials(ssid, strlen(ssid), password, strlen(password), security, cipher);
+        if(NULL == password) {
+            setCredentials(ssid, strlen(ssid), password, 0, security, cipher);
+        } else {
+            setCredentials(ssid, strlen(ssid), password, strlen(password), security, cipher);
+        }
     }
 
     void setCredentials(const char *ssid, unsigned int ssidLen, const char *password,
@@ -208,6 +212,82 @@ public:
         return network_ready(*this, 0, NULL);
     }
 
+    //添加ap操作
+    bool apBegin(const char* ssid, const char* password = NULL, int channel = 1, int ssid_hidden = 0, int max_connection = 4) {
+        WLanApConfigs apConfigs;
+
+        memset(&apConfigs, 0, sizeof(apConfigs));
+        apConfigs.size = sizeof(apConfigs);
+        apConfigs.ssid = ssid;
+        apConfigs.ssid_len = strlen(ssid);
+        apConfigs.password = password;
+        if(NULL == password) {
+            apConfigs.password_len = 0;
+        } else {
+            apConfigs.password_len = strlen(password);
+        }
+        apConfigs.channel = channel;
+        apConfigs.ssid_hidden = ssid_hidden;
+        apConfigs.max_connection = max_connection;
+        if(0 == network_set_ap_configs(*this, 0, &apConfigs, NULL)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool apConfig(const IPAddress local_ip, const IPAddress gateway, const IPAddress subnet) {
+        WLanApInfos apInfos;
+
+        memset(&apInfos, 0, sizeof(apInfos));
+        apInfos.ip = uint32_t(local_ip);
+        apInfos.netmask = uint32_t(subnet);
+        apInfos.gw = uint32_t(gateway);
+        if(0 == network_set_ap_infos(*this, 0, &apInfos, NULL)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool apDisconnect(bool wifioff = false) {
+        network_ap_disconnect(*this, 0, NULL);
+    }
+
+    //unimplemented
+#if 0
+    uint8_t apGetStationNum() {
+        return 0;
+    }
+
+    IPAddress apIp(bool wifioff = false) {
+
+    }
+
+    bool apEnableIpV6() {
+
+    }
+
+    IPv6Address apIPv6() {
+
+    }
+
+    const char * apGetHostname() {
+
+    }
+
+    bool apSetHostname(const char * hostname) {
+
+    }
+
+    uint8_t* apMacAddress(uint8_t* mac) {
+
+    }
+
+    String softAPmacAddress(void) {
+
+    }
+#endif
 };
 
 extern WiFiClass WiFi;

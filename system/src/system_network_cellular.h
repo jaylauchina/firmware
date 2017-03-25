@@ -151,6 +151,12 @@ public:
 #endif
 
     void set_error_count(unsigned count) override { /* n/a */ }
+
+    // add ap interface
+    int set_ap_configs(NetworkApConfigs* configs) override { /* n/a */ return -1; }
+    int set_ap_infos(NetworkApInfos* infos) override { /* n/a */ return -1; }
+    void ap_disconnect() override { /* n/a */ return -1; }
+
 };
 
 #endif

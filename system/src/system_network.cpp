@@ -138,6 +138,22 @@ void network_setup(network_handle_t network, uint32_t flags, void* reserved)
     SYSTEM_THREAD_CONTEXT_ASYNC_CALL(nif(network).setup());
 }
 
+int network_set_ap_configs(network_handle_t network, uint32_t, NetworkApConfigs* configs, void*)
+{
+    SYSTEM_THREAD_CONTEXT_SYNC_CALL_RESULT(nif(network).set_ap_configs(configs));
+}
+
+int network_set_ap_infos(network_handle_t network, uint32_t, NetworkApInfos* infos, void*)
+{
+    SYSTEM_THREAD_CONTEXT_SYNC_CALL_RESULT(nif(network).set_ap_infos(infos));
+}
+
+void network_ap_disconnect(network_handle_t network, uint32_t param, void* reserved)
+{
+    SYSTEM_THREAD_CONTEXT_ASYNC_CALL(nif(network).ap_disconnect());
+}
+
+
 void manage_ip_config()
 {
     nif(0).update_config();

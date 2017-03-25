@@ -61,7 +61,7 @@ public:
         int result = wlan_set_credentials(credentials);
         if (!result)
         {}
-            //system_notify_event(network_credentials, network_credentials_added, credentials);
+        //system_notify_event(network_credentials, network_credentials_added, credentials);
         return result;
     }
 
@@ -83,6 +83,24 @@ public:
     void set_error_count(unsigned count) override
     {
         wlan_set_error_count(count);
+    }
+
+    int set_ap_configs(NetworkApConfigs* configs) override
+    {
+        INTOROBOT_WLAN_STARTED = 1;
+        WLAN_DHCP = 1;
+        return wlan_set_ap_configs(configs);
+    }
+
+    int set_ap_infos(NetworkApInfos* infos) override
+    {
+        return wlan_set_ap_infos(infos);
+    }
+
+    void ap_disconnect() override {
+        INTOROBOT_WLAN_STARTED = 1;
+        WLAN_DHCP = 0;
+        return wlan_ap_disconnect();
     }
 };
 

@@ -101,17 +101,20 @@ struct NetworkInterface
     virtual void update_config(bool force=false)=0;
     virtual void* config()=0;       // not really happy about lack of type
 
+    virtual int set_ap_configs(NetworkApConfigs* configs)=0;
+    virtual int set_ap_infos(NetworkApInfos* infos)=0;
+    virtual void ap_disconnect()=0;
 };
 
 
 class ManagedNetworkInterface : public NetworkInterface
 {
+protected:
     volatile uint8_t WLAN_DISCONNECT;
     volatile uint8_t WLAN_CONNECTED;
     volatile uint8_t WLAN_CONNECTING;
     volatile uint8_t WLAN_DHCP;
 
-protected:
     virtual network_interface_t network_interface() override { return 0; }
     virtual void connect_now()=0;
     virtual void disconnect_now()=0;

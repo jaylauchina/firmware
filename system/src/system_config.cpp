@@ -440,7 +440,7 @@ void DeviceConfig::dealSendWifiInfo(aJsonObject* value_Object)
         } else {
             WiFi.setCredentials(ssidObject->valuestring, passwdObject->valuestring);
         }
-        network_setup(0, 0, NULL);
+        //network_setup(0, 0, NULL);
         network_connect(0, 0, 0, NULL);
         sendComfirm(200);
         return;
@@ -815,8 +815,15 @@ void UsartDeviceConfig::close(void)
 #endif
 
 #ifdef configSETUP_TCP_ENABLE
+IPAddress apIP(192, 168, 8, 1);
+IPAddress netMsk(255, 255, 255, 0);
+
 void TcpDeviceConfig::init(void)
 {
+    wlan_setup();
+    WiFi.apConfig(apIP, apIP, netMsk);
+    WiFi.apBegin("intorobot");
+    DEBUG("tcp begin init");
     server.begin();
 }
 
@@ -841,7 +848,9 @@ int TcpDeviceConfig::available(void)
 {
     client_bak = server.available();
     if(client_bak) {
+        DEBUG("server.available");
         if(client) {
+            DEBUG("server.available stop 1");
             client.stop();
         }
         client=client_bak;
@@ -852,6 +861,7 @@ int TcpDeviceConfig::available(void)
         if(client.connected()) {
             return client.available();
         }
+        DEBUG("server.available stop 2");
         client.stop();
     }
     return false;
@@ -875,6 +885,7 @@ size_t TcpDeviceConfig::write(const uint8_t *buf, size_t size)
 void TcpDeviceConfig::close(void)
 {
     client.stop();
+    WiFi.apDisconnect();
 }
 #endif
 
