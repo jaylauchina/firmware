@@ -55,7 +55,8 @@ void LoRaRadioInitialize(void);
 bool SX1276Test(int8_t &snr, int8_t &rssi, int8_t &txRssi);
 
 enum _band_width_t {
-    BW125 = 0,
+    BW62_5 = 0,
+    BW125,// = 0,
     BW250,
     BW500
 };
@@ -85,7 +86,7 @@ class LoRaWanClass
     uint8_t _modem = 1;              //模式 0:fsk 1:lora
     uint32_t _bandwidth  = 0;        //带宽fsk:2600-250000Hz lora:0-125KHz 1-250K 2-500K
     uint32_t _datarate   = 7;        //速率fsk:600-300000　lora:扩频因子 6-12
-    uint8_t _coderate    = 0;        //纠错码率 fsk:0 lora: 1(4/5) 2(4/6) 3(4/7) 4(4/8) 仅lora用
+    uint8_t _coderate    = 1;        //纠错码率 fsk:0 lora: 1(4/5) 2(4/6) 3(4/7) 4(4/8) 仅lora用
     uint32_t _bandwidthAfc = 0;      //fsk:2600-250000 lora:0 仅fsk用
     uint16_t _preambleLen  = 8;      //前导码长度
     uint16_t _symbTimeout  = 8;      //单次接收超时
@@ -182,6 +183,8 @@ class LoRaWanClass
         void radioSetMaxPayloadLength(uint8_t max);
         //设置同步字
         void radioSetSyncword(uint8_t syncword);
+        void radioSetFixLen(bool fixLen);
+        void radioSetFixPayloadLen(uint8_t payloadLen);
 
     private:
 };

@@ -20,6 +20,7 @@ Maintainer: Miguel Luis, Gregory Cristian and Wael Guibene
 #include "timer.h"
 #include "utilities.h"
 #include "service_debug.h"
+#include "wiring_ticks.h"
 
 /*
  * Local types definition
@@ -435,12 +436,14 @@ void SX1276SetRxConfig( RadioModems_t modem, uint32_t bandwidth,
         break;
     case MODEM_LORA:
         {
-            if( bandwidth > 2 )
+            /* if( bandwidth > 2 ) */
+            if( bandwidth > 3 )
             {
                 // Fatal error: When using LoRa modem only bandwidths 125, 250 and 500 kHz are supported
                 while( 1 );
             }
-            bandwidth += 7;
+            /* bandwidth += 7; */
+            bandwidth += 6;
             SX1276.Settings.LoRa.Bandwidth = bandwidth;
             SX1276.Settings.LoRa.Datarate = datarate;
             SX1276.Settings.LoRa.Coderate = coderate;
@@ -462,7 +465,9 @@ void SX1276SetRxConfig( RadioModems_t modem, uint32_t bandwidth,
                 datarate = 6;
             }
 
-            if( ( ( bandwidth == 7 ) && ( ( datarate == 11 ) || ( datarate == 12 ) ) ) ||
+            /* if( ( ( bandwidth == 7 ) && ( ( datarate == 11 ) || ( datarate == 12 ) ) ) || */
+            /*     ( ( bandwidth == 8 ) && ( datarate == 12 ) ) ) */
+            if( ( ( bandwidth == 7 || bandwidth == 6) && ( ( datarate == 11 ) || ( datarate == 12 ) ) ) ||
                 ( ( bandwidth == 8 ) && ( datarate == 12 ) ) )
             {
                 SX1276.Settings.LoRa.LowDatarateOptimize = 0x01;
@@ -597,12 +602,14 @@ void SX1276SetTxConfig( RadioModems_t modem, int8_t power, uint32_t fdev,
     case MODEM_LORA:
         {
             SX1276.Settings.LoRa.Power = power;
-            if( bandwidth > 2 )
+            /* if( bandwidth > 2 ) */
+            if( bandwidth > 3 )
             {
                 // Fatal error: When using LoRa modem only bandwidths 125, 250 and 500 kHz are supported
                 while( 1 );
             }
-            bandwidth += 7;
+            /* bandwidth += 7; */
+            bandwidth += 6;
             SX1276.Settings.LoRa.Bandwidth = bandwidth;
             SX1276.Settings.LoRa.Datarate = datarate;
             SX1276.Settings.LoRa.Coderate = coderate;
@@ -622,7 +629,9 @@ void SX1276SetTxConfig( RadioModems_t modem, int8_t power, uint32_t fdev,
             {
                 datarate = 6;
             }
-            if( ( ( bandwidth == 7 ) && ( ( datarate == 11 ) || ( datarate == 12 ) ) ) ||
+            /* if( ( ( bandwidth == 7 ) && ( ( datarate == 11 ) || ( datarate == 12 ) ) ) || */
+            /*     ( ( bandwidth == 8 ) && ( datarate == 12 ) ) ) */
+            if( ( ( bandwidth == 7 || bandwidth == 6) && ( ( datarate == 11 ) || ( datarate == 12 ) ) ) ||
                 ( ( bandwidth == 8 ) && ( datarate == 12 ) ) )
             {
                 SX1276.Settings.LoRa.LowDatarateOptimize = 0x01;
@@ -1379,6 +1388,7 @@ void SX1276OnTimeoutIrq( void )
 
 void SX1276OnDio0Irq( void )
 {
+    /* DEBUG_D("c = %d",millis()); */
     /* DEBUG("sx1278 DIO0 IRQ"); */
     volatile uint8_t irqFlags = 0;
 

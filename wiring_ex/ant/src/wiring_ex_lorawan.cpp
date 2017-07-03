@@ -582,6 +582,8 @@ void LoRaWanClass::radioSetTxConfig(void)
 void LoRaWanClass::radioSend( uint8_t *buffer, uint8_t size )
 {
     radioSetTxConfig();
+
+    // DEBUG_D("b = %d",millis());
     Radio.Send(buffer,size);
 }
 
@@ -631,6 +633,16 @@ void LoRaWanClass::radioSetMaxPayloadLength(uint8_t max)
 void LoRaWanClass::radioSetSyncword(uint8_t syncword)
 {
     Radio.Write(0x39,syncword);
+}
+
+void LoRaWanClass::radioSetFixLen(bool fixLen)
+{
+    _fixLen = fixLen;
+}
+
+void LoRaWanClass::radioSetFixPayloadLen(uint8_t payloadLen)
+{
+    _payloadLen = payloadLen;
 }
 
 

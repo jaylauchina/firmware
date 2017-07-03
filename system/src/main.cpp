@@ -315,7 +315,15 @@ void app_setup_and_loop_initial(bool *threaded)
 void app_setup_and_loop(void)
 {
     bool threaded;
+    #if 1 
+    setup();
+    while(1)
+    {
+        loop();
+    }
+    #endif
 
+    #if  0
     app_setup_and_loop_initial(&threaded);
 
     if(!threaded) {
@@ -324,6 +332,7 @@ void app_setup_and_loop(void)
             app_loop(false);
         }
     }
+    #endif
 }
 
 #ifdef USE_FULL_ASSERT
