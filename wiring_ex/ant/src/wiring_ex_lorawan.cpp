@@ -583,7 +583,7 @@ void LoRaWanClass::radioSend( uint8_t *buffer, uint8_t size )
 {
     radioSetTxConfig();
 
-    // DEBUG_D("b = %d",millis());
+    // DEBUG_D("t2 = %d",millis());
     Radio.Send(buffer,size);
 }
 

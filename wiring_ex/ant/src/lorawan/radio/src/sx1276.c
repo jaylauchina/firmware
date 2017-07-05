@@ -1388,7 +1388,7 @@ void SX1276OnTimeoutIrq( void )
 
 void SX1276OnDio0Irq( void )
 {
-    /* DEBUG_D("c = %d",millis()); */
+    /* DEBUG_D("t3 = %d",millis()); */
     /* DEBUG("sx1278 DIO0 IRQ"); */
     volatile uint8_t irqFlags = 0;
 

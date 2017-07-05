@@ -84,8 +84,8 @@ class LoRaWanClass
 {
     public:
     uint8_t _modem = 1;              //模式 0:fsk 1:lora
-    uint32_t _bandwidth  = 0;        //带宽fsk:2600-250000Hz lora:0-125KHz 1-250K 2-500K
-    uint32_t _datarate   = 7;        //速率fsk:600-300000　lora:扩频因子 6-12
+    uint32_t _bandwidth  = 1;        //带宽fsk:2600-250000Hz lora:0-125KHz 1-250K 2-500K
+    uint32_t _datarate   = 12;        //速率fsk:600-300000　lora:扩频因子 6-12
     uint8_t _coderate    = 1;        //纠错码率 fsk:0 lora: 1(4/5) 2(4/6) 3(4/7) 4(4/8) 仅lora用
     uint32_t _bandwidthAfc = 0;      //fsk:2600-250000 lora:0 仅fsk用
     uint16_t _preambleLen  = 8;      //前导码长度
