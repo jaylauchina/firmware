@@ -132,6 +132,24 @@ typedef struct {
     unsigned flags;
 } WLanCredentials;
 
+typedef struct {
+    unsigned size;              // the size of this structure. allows older clients to work with newer HAL.
+    const char* ssid;
+    unsigned ssid_len;
+    const char* password;
+    unsigned password_len;
+    unsigned channel;
+    unsigned ssid_hidden;       // Note: default 0
+    unsigned max_connection;    // Note: default 4, max 4
+    unsigned beacon_interval;   // Note: support 100 ~ 60000 ms, default 100
+} WLanApConfigs;
+
+typedef struct {
+    uint32_t ip;
+    uint32_t netmask;
+    uint32_t gw;
+} WLanApInfos;
+
 #define WLAN_SET_CREDENTIALS_FLAGS_DRY_RUN  (1<<0)
 
 #define WLAN_SET_CREDENTIALS_UNKNOWN_SECURITY_TYPE (-1)
@@ -227,6 +245,14 @@ int wlan_scan(wlan_scan_result_t callback, void* cookie);
 
 int wlan_set_macaddr(uint8_t *stamacaddr, uint8_t *apmacaddr);
 int wlan_get_macaddr(uint8_t *stamacaddr, uint8_t *apmacaddr);
+
+int wlan_set_ap_configs(WLanApConfigs* configs);
+int wlan_set_ap_infos(WLanApInfos* infos);
+int wlan_ap_disconnect(bool wifioff);
+uint8_t wlan_ap_get_station_num();
+int wlan_ap_get_ap_ip(HAL_IPAddress* out_ip_addr);
+int wlan_ap_get_mac_address(uint8_t* mac);
+
 
 #ifdef	__cplusplus
 }

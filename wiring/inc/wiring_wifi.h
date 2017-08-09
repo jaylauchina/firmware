@@ -24,6 +24,7 @@
 
 #ifdef configWIRING_WIFI_ENABLE
 
+#include <stdio.h>
 #include <string.h>
 #include "wiring_network.h"
 #include "wlan_hal.h"
@@ -141,7 +142,11 @@ public:
     }
 
     void setCredentials(const char *ssid, const char *password, unsigned long security, unsigned long cipher=WLAN_CIPHER_NOT_SET) {
-        setCredentials(ssid, strlen(ssid), password, strlen(password), security, cipher);
+        if(NULL == password) {
+            setCredentials(ssid, strlen(ssid), password, 0, security, cipher);
+        } else {
+            setCredentials(ssid, strlen(ssid), password, strlen(password), security, cipher);
+        }
     }
 
     void setCredentials(const char *ssid, unsigned int ssidLen, const char *password,
@@ -208,6 +213,83 @@ public:
         return network_ready(*this, 0, NULL);
     }
 
+#ifdef configWIRING_WIFI_AP_ENABLE
+    //添加ap操作
+    bool ap(const char* ssid, const char* password = NULL, int channel = 1, int ssid_hidden = 0, int max_connection = 4) {
+        WLanApConfigs apConfigs;
+
+        memset(&apConfigs, 0, sizeof(apConfigs));
+        apConfigs.size = sizeof(apConfigs);
+        apConfigs.ssid = ssid;
+        apConfigs.ssid_len = strlen(ssid);
+        apConfigs.password = password;
+        if(NULL == password) {
+            apConfigs.password_len = 0;
+        } else {
+            apConfigs.password_len = strlen(password);
+        }
+        apConfigs.channel = channel;
+        apConfigs.ssid_hidden = ssid_hidden;
+        apConfigs.max_connection = max_connection;
+
+        if(0 == wlan_set_ap_configs(&apConfigs)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool apConfig(const IPAddress local_ip, const IPAddress gateway, const IPAddress subnet) {
+        WLanApInfos apInfos;
+
+        memset(&apInfos, 0, sizeof(apInfos));
+        apInfos.ip = local_ip.raw().ipv4;
+        apInfos.netmask = subnet.raw().ipv4;
+        apInfos.gw = gateway.raw().ipv4;
+
+        if(0 == wlan_set_ap_infos(&apInfos)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool apDisconnect(bool wifioff = false) {
+        wlan_ap_disconnect(wifioff);
+    }
+
+    uint8_t apGetStationNum() {
+        return wlan_ap_get_station_num();
+    }
+
+    IPAddress apIp() {
+        HAL_IPAddress ip;
+
+        return (wlan_ap_get_ap_ip(&ip)<0) ? IPAddress(uint32_t(0)) : IPAddress(ip);
+    }
+
+    const char * apGetHostname() {
+
+    }
+
+    bool apSetHostname(const char * hostname) {
+
+    }
+
+    uint8_t* apMacAddress(uint8_t* mac) {
+        wlan_ap_get_mac_address(mac);
+        return mac;
+    }
+
+    String softAPmacAddress(void) {
+        uint8_t mac[6];
+        char macStr[18] = { 0 };
+        wlan_ap_get_mac_address(mac);
+
+        sprintf(macStr, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        return String(macStr);
+    }
+#endif // Wiring_WiFi_Ap
 };
 
 extern WiFiClass WiFi;

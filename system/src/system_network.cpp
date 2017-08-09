@@ -144,6 +144,7 @@ void network_setup(network_handle_t network, uint32_t flags, void* reserved)
     SYSTEM_THREAD_CONTEXT_ASYNC_CALL(nif(network).setup());
 }
 
+
 void manage_ip_config()
 {
     nif(0).update_config();

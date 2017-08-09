@@ -26,6 +26,7 @@
 
 /* config wiring communication type. */
 //#define configWIRING_WIFI_ENABLE
+//#define configWIRING_WIFI_AP_ENABLE
 //#define configWIRING_CELLULAR_ENABLE
 #define configWIRING_LORA_ENABLE
 //#define configWIRING_IPV6_ENABLE

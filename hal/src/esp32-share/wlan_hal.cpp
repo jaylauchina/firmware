@@ -29,6 +29,15 @@
 #include "lwip/dns.h"
 #include "inet_hal.h"
 
+#define HAL_WLAN_DEBUG
+
+#ifdef HAL_WLAN_DEBUG
+#define HALWLAN_DEBUG(...)  do {DEBUG(__VA_ARGS__);}while(0)
+#define HALWLAN_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
+#else
+#define HALWLAN_DEBUG(...)
+#define HALWLAN_DEBUG_D(...)
+#endif
 
 #define STATION_IF      0x00
 #define SOFTAP_IF       0x01
@@ -39,7 +48,7 @@ static volatile uint32_t wlan_timeout_duration;
 inline void WLAN_TIMEOUT(uint32_t dur) {
     wlan_timeout_start = HAL_Timer_Get_Milli_Seconds();
     wlan_timeout_duration = dur;
-    //DEBUG("WLAN WD Set %d",(dur));
+    //HALWLAN_DEBUG("WLAN WD Set %d",(dur));
 }
 inline bool IS_WLAN_TIMEOUT() {
     return wlan_timeout_duration && ((HAL_Timer_Get_Milli_Seconds()-wlan_timeout_start)>wlan_timeout_duration);
@@ -47,7 +56,7 @@ inline bool IS_WLAN_TIMEOUT() {
 
 inline void CLR_WLAN_TIMEOUT() {
     wlan_timeout_duration = 0;
-    //DEBUG("WLAN WD Cleared, was %d", wlan_timeout_duration);
+    //HALWLAN_DEBUG("WLAN WD Cleared, was %d", wlan_timeout_duration);
 }
 
 //=======net notify===========
@@ -478,5 +487,150 @@ int wlan_set_macaddr_when_init(void)
          wlan_set_macaddr_from_flash(mac_addrs.stamac_addrs, mac_addrs.apmac_addrs);
          esp32_setMode(WIFI_MODE_STA);
      }
+}
+
+// add ap interface
+static bool softap_config_equal(const wifi_config_t& lhs, const wifi_config_t& rhs)
+{
+    if(strcmp((char*)(lhs.ap.ssid), (char*)(rhs.ap.ssid)) != 0) {
+        return false;
+    }
+    if(strcmp((char*)(lhs.ap.password), (char*)(rhs.ap.password)) != 0) {
+        return false;
+    }
+    if(lhs.ap.channel != rhs.ap.channel) {
+        return false;
+    }
+    if(lhs.ap.ssid_hidden != rhs.ap.ssid_hidden) {
+        return false;
+    }
+    return true;
+}
+
+int wlan_set_ap_configs(WLanApConfigs* configs)
+{
+    HALWLAN_DEBUG("wlan_set_ap_configs");
+    if(!esp32_enableAP(true)) {
+        return -1;
+    }
+
+    if( !configs->ssid || *(configs->ssid) == 0 || configs->ssid_len > 31) {
+        // fail SSID too long or missing!
+        return -1;
+    }
+
+    if(configs->password && (configs->password_len > 63 || configs->password_len < 8)) {
+        // fail passphrase to long or short!
+        return -1;
+    }
+
+    esp_wifi_start();
+    wifi_config_t conf;
+    strcpy((char*)(conf.ap.ssid), configs->ssid);
+    conf.ap.channel = configs->channel;
+    conf.ap.ssid_len = configs->ssid_len;
+    conf.ap.ssid_hidden = configs->ssid_hidden;
+    conf.ap.max_connection = configs->max_connection;
+    conf.ap.beacon_interval = 100;
+
+    if(!(configs->password) || configs->password_len == 0) {
+        conf.ap.authmode = WIFI_AUTH_OPEN;
+        *conf.ap.password = 0;
+    } else {
+        conf.ap.authmode = WIFI_AUTH_WPA2_PSK;
+        strcpy((char*)(conf.ap.password), configs->password);
+    }
+
+    wifi_config_t conf_current;
+    esp_wifi_get_config(WIFI_IF_AP, &conf_current);
+    if(softap_config_equal(conf, conf_current)) {
+        HALWLAN_DEBUG("softap config unchanged");
+        return 0;
+    }
+
+    if(esp_wifi_set_config(WIFI_IF_AP, &conf) != ESP_OK) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int wlan_set_ap_infos(WLanApInfos* infos)
+{
+    HALWLAN_DEBUG("wlan_set_ap_infos");
+    if(!esp32_enableAP(true)) {
+        return -1;
+    }
+
+    esp_wifi_start();
+    tcpip_adapter_ip_info_t info;
+    info.ip.addr  = ipv4_reverse(infos->ip);
+    info.netmask.addr  = ipv4_reverse(infos->netmask);
+    info.gw.addr  = ipv4_reverse(infos->gw);
+
+    HALWLAN_DEBUG("info.ip.addr: %08x", info.ip.addr);
+    HALWLAN_DEBUG("info.netmask.addr: %08x", info.netmask.addr);
+    HALWLAN_DEBUG("info.gw.addr: %08x", info.gw.addr);
+
+    tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
+    if(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP, &info) == ESP_OK) {
+        dhcps_lease_t lease;
+        lease.enable = true;
+        lease.start_ip.addr = info.ip.addr + (1 << 24);
+        lease.end_ip.addr = info.ip.addr + (11 << 24);
+
+        tcpip_adapter_dhcps_option(
+            (tcpip_adapter_option_mode_t)TCPIP_ADAPTER_OP_SET,
+            (tcpip_adapter_option_id_t)REQUESTED_IP_ADDRESS,
+            (void*)&lease, sizeof(dhcps_lease_t)
+        );
+
+        if(tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP) == ESP_OK) {
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int wlan_ap_disconnect((bool wifioff))
+{
+    HALWLAN_DEBUG("wlan_ap_disconnect");
+    bool ret;
+    wifi_config_t conf;
+    *conf.ap.ssid = 0;
+    *conf.ap.password = 0;
+    if(esp_wifi_set_config(WIFI_IF_AP, &conf) == ESP_OK) {
+        return -1;
+    }
+
+    if(wifioff) {
+        ret = WiFi.enableAP(false) == ESP_OK;
+    }
+
+    if(false == ret) {
+        return -1;
+    }
+
+    return 0;
+}
+
+uint8_t wlan_ap_get_station_num() {
+    wifi_sta_list_t clients;
+    if(esp_wifi_ap_get_sta_list(&clients) == ESP_OK) {
+        return clients.num;
+    }
+    return 0;
+}
+
+int wlan_ap_get_ap_ip(HAL_IPAddress* out_ip_addr) {
+    tcpip_adapter_ip_info_t ip;
+    tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ip);
+    *out_ip_addr = ip.ip.addr;
+    return 0;
+}
+
+int wlan_ap_get_mac_address(uint8_t* mac) {
+    esp_wifi_get_mac(WIFI_IF_AP, mac);
+    return 0;
 }
 
