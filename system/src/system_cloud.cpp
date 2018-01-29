@@ -50,6 +50,7 @@
 #include "system_config.h"
 #include "string_convert.h"
 #include "wiring_ajson.h"
+#include "wiring_httpupdate.h"
 #include "intorobot_def.h"
 
 /*debug switch*/
@@ -216,24 +217,7 @@ static void intorobot_ota_upgrade(const char *token, const char *md5)
     param += String(INTOROBOT_OTA_UPDATE_URL) + "?dwn_token=" + String(token);
 
     uint32_t size = 0;
-#if PLATFORM_ID == PLATFORM_FIG
-    HTTPUpdate httpUpdate;
-    String url="http://" + domain + param;
-    httpUpdate.setStoreStartAddress(HAL_OTA_FlashAddress());
-    httpUpdate.setStoreMaxSize(HAL_OTA_FlashLength());
-    httpUpdate.setSendProgressCb(intorobot_send_upgrade_progress);
-    t_httpUpdate_return ret = httpUpdate.update(url);
-    switch(ret) {
-        case HTTP_UPDATE_OK:
-            SCLOUD_DEBUG("v2 :HTTP_UPDATE_OK!\r\n");
-            size = httpUpdate.size();
-            flag = true;
-            break;
-        default:
-            SCLOUD_DEBUG("v2 :HTTP_UPDATE_FAIL!\r\n");
-            break;
-    }
-#else
+#if PLATFORM_ID == PLATFORM_NEUTRON
     down_status_t status;
     down_status_t result = HAL_OTA_Download_App(domain.c_str(), param.c_str(), md5);
     switch(result)
@@ -257,6 +241,21 @@ static void intorobot_ota_upgrade(const char *token, const char *md5)
             } while(1);
             break;
         default:
+            break;
+    }
+#else
+    HTTPUpdate httpUpdate;
+    String url="http://" + domain + param;
+    httpUpdate.setSendProgressCb(intorobot_send_upgrade_progress);
+    t_httpUpdate_return ret = httpUpdate.update(url);
+    switch(ret) {
+        case HTTP_UPDATE_OK:
+            SCLOUD_DEBUG("v2 :HTTP_UPDATE_OK!\r\n");
+            size = httpUpdate.size();
+            flag = true;
+            break;
+        default:
+            SCLOUD_DEBUG("v2 :HTTP_UPDATE_FAIL!\r\n");
             break;
     }
 #endif
@@ -296,26 +295,7 @@ static void intorobot_subsys_upgrade(const char *version)
 
     uint32_t defAppSize = 0, bootSize = 0;
     down_status_t status;
-#if PLATFORM_ID == PLATFORM_FIG
-    HTTPUpdate httpUpdate;
-    String url="http://" + domain + param + "/fig-boot.bin";
-    httpUpdate.setStoreStartAddress(HAL_BOOT_FlashAddress());
-    httpUpdate.setStoreMaxSize(HAL_BOOT_FlashLength());
-    t_httpUpdate_return ret = httpUpdate.update(url);
-    if(HTTP_UPDATE_OK == ret) {
-        bootSize = httpUpdate.size();
-        url="http://" + domain + param + "/default-fig.bin";
-        httpUpdate.setStoreStartAddress(HAL_DEF_APP_FlashAddress());
-        httpUpdate.setStoreMaxSize(HAL_DEF_APP_FlashLength());
-        httpUpdate.setSendProgressCb(intorobot_send_upgrade_progress);
-        t_httpUpdate_return ret = httpUpdate.update(url);
-        if(HTTP_UPDATE_OK == ret) {
-            defAppSize = httpUpdate.size();
-            SCLOUD_DEBUG("v2 :HTTP_UPDATE_OK!\r\n");
-            flag = true;
-        }
-    }
-#else
+#if PLATFORM_ID == PLATFORM_NEUTRON
     down_status_t result = HAL_OTA_Download_Subsys(domain.c_str(), param.c_str());
     switch(result)
     {
@@ -338,6 +318,25 @@ static void intorobot_subsys_upgrade(const char *version)
             break;
         default:
             break;
+    }
+#else
+    HTTPUpdate httpUpdate;
+    String url="http://" + domain + param + "/fig-boot.bin";
+    httpUpdate.setStoreStartAddress(HAL_BOOT_FlashAddress());
+    httpUpdate.setStoreMaxSize(HAL_BOOT_FlashLength());
+    t_httpUpdate_return ret = httpUpdate.update(url);
+    if(HTTP_UPDATE_OK == ret) {
+        bootSize = httpUpdate.size();
+        url="http://" + domain + param + "/default-fig.bin";
+        httpUpdate.setStoreStartAddress(HAL_DEF_APP_FlashAddress());
+        httpUpdate.setStoreMaxSize(HAL_DEF_APP_FlashLength());
+        httpUpdate.setSendProgressCb(intorobot_send_upgrade_progress);
+        t_httpUpdate_return ret = httpUpdate.update(url);
+        if(HTTP_UPDATE_OK == ret) {
+            defAppSize = httpUpdate.size();
+            SCLOUD_DEBUG("v2 :HTTP_UPDATE_OK!\r\n");
+            flag = true;
+        }
     }
 #endif
     if(flag) {
@@ -968,6 +967,7 @@ int intorobot_cloud_connect(void)
             aJson.addStringToObject(root, "subsysVer", buffer);
             aJson.addBooleanToObject(root, "online", true);
             char *string = aJson.print(root);
+            SCLOUD_DEBUG("string = %s\r\n", string);
             intorobot_publish(TOPIC_VERSION_V2, INTOROBOT_MQTT_WILL_TOPIC, (uint8_t*)string, strlen(string), 0, true);
             free(string);
             aJson.deleteItem(root);
