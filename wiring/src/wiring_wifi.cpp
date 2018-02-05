@@ -26,6 +26,7 @@
 #include "system_task.h"
 #include "system_tick_hal.h"
 #include <string.h>
+#include <stdio.h>
 
 namespace intorobot {
 
@@ -98,6 +99,43 @@ namespace intorobot {
         }
         return (2);
     }
+
+    bool WiFiClass::setAP(const char* ssid, const char* passphrase, int channel, int ssid_hidden, int max_connection)
+    {
+        wlan_set_ap(ssid, passphrase, channel, ssid_hidden, max_connection);
+        wifi_ap_status = true;
+    }
+
+    bool WiFiClass::configAP(IPAddress local_ip, IPAddress gateway, IPAddress subnet)
+    {
+        wlan_ap_config(local_ip, gateway, subnet);
+    }
+
+    void WiFiClass::startAP(void)
+    {
+        String ssid="IntoRobot_Nut";
+        const char *password = "12345678";
+        char tmp[10] = {0};
+        uint8_t stamac[6] = {0}, apmac[6] = {0};
+        wlan_get_macaddr(stamac, apmac);
+        sprintf(tmp,"%02X",apmac[4]);
+        ssid = ssid +tmp;
+        sprintf(tmp,"%02X",apmac[5]);
+        ssid = ssid +tmp;
+        setAP(ssid, password);
+    }
+
+    bool WiFiClass::closeAP(void)
+    {
+        wlan_ap_disconnect(true);
+        wifi_ap_status = false;
+    }
+
+    bool WiFiClass::getAPStatus(void)
+    {
+        return wifi_ap_status;
+    }
+
 
 /********************************* Bug Notice *********************************
 On occasion, "wlan_ioctl_get_scan_results" only returns a single bad entry

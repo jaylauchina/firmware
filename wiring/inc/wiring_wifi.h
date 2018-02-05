@@ -48,6 +48,9 @@ class WiFiClass : public NetworkClass
         wlan_set_ipaddress_source(source, true, NULL);
     }
 
+private:
+    bool wifi_ap_status = false;
+
 public:
     WiFiClass() {}
     ~WiFiClass() {}
@@ -207,6 +210,12 @@ public:
     bool status(void) {
         return network_ready(*this, 0, NULL);
     }
+
+    bool setAP(const char* ssid, const char* passphrase = NULL, int channel = 1, int ssid_hidden = 0, int max_connection = 4);
+    bool configAP(IPAddress local_ip, IPAddress gateway, IPAddress subnet);
+    void startAP(void);
+    bool closeAP(void);
+    bool getAPStatus(void);
 
 };
 

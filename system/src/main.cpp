@@ -105,6 +105,12 @@ extern "C" void HAL_SysTick_Handler(void)
                 HAL_UI_RGB_Color(RGB_COLOR_YELLOW);//黄灯打开
             }
         }
+        else if(BUTTON_press_time > TIMING_MODE_CONFIG_AP_SERIAL) {
+            if(BUTTON_Mode!=BUTTON_MODE_CONFIG_AP_SERIAL) {
+                BUTTON_Mode=BUTTON_MODE_CONFIG_AP_SERIAL; //wifi imlink配置模式
+                HAL_UI_RGB_Color(RGB_COLOR_CYAN);              //红灯打开
+            }
+        }
         else if( BUTTON_press_time > TIMING_MODE_CONFIG_IMLINK_SERIAL ) {
             if(BUTTON_Mode!=BUTTON_MODE_CONFIG_IMLINK_SERIAL) {
                 BUTTON_Mode=BUTTON_MODE_CONFIG_IMLINK_SERIAL; //wifi imlink配置模式
@@ -116,6 +122,14 @@ extern "C" void HAL_SysTick_Handler(void)
             case BUTTON_MODE_CONFIG_IMLINK_SERIAL:
                 if(SYSTEM_CONFIG_TYPE_IMLINK_SERIAL != System.configCurrentMode()) {
                     System.configEnterMode(SYSTEM_CONFIG_TYPE_IMLINK_SERIAL);
+                } else {
+                    System.configExit();
+                }
+                break;
+
+            case BUTTON_MODE_CONFIG_AP_SERIAL:
+                if(SYSTEM_CONFIG_TYPE_AP != System.configCurrentMode()) {
+                    System.configEnterMode(SYSTEM_CONFIG_TYPE_AP);
                 } else {
                     System.configExit();
                 }

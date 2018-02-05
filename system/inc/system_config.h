@@ -47,6 +47,7 @@ typedef enum{
     //设置类
     DEVICE_CONFIG_SEND_WIFI_INFO,          //设置wifi信息
     DEVICE_CONFIG_SET_NETWORK_CREDENTIALS, //设置网络接入凭证
+    DEVICE_CONFIG_SET_NETWORK_CREDENTIALS_EXIT,//设置网络接入凭证并退出
     DEVICE_CONFIG_SET_DEVICE_INFO,         //设置设备信息
     DEVICE_CONFIG_SET_SECURITY,            //设置设备安全信息
     DEVICE_CONFIG_SET_INFO,                //设置设备信息
@@ -88,6 +89,7 @@ public:
 
     void dealSendWifiInfo(aJsonObject* root);
     void dealSetNetworkCredentials(aJsonObject* root);
+    void dealSetNetworkCredentialsExit(aJsonObject* root);
     void dealSendDeviceInfo(aJsonObject* root);
     void dealSetSecurity(aJsonObject* root);
     void dealSetInfo(aJsonObject* root);
@@ -143,7 +145,7 @@ public:
 class TcpDeviceConfig: public DeviceConfig
 {
 public:
-    TCPServer server=TCPServer(80);
+    TCPServer server=TCPServer(5555);
     TCPClient client,client_bak;
 
 public:

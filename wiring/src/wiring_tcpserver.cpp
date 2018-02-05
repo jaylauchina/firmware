@@ -24,6 +24,20 @@
 #include "wiring_tcpclient.h"
 #include "wiring_tcpserver.h"
 #include "wiring_network.h"
+#include "wiring_wifi.h"
+
+//#define WIRING_TCPSERVER_DEBUG
+
+#ifdef WIRING_TCPSERVER_DEBUG
+#define WTCPSERVER_DEBUG(...)    do {DEBUG(__VA_ARGS__);}while(0)
+#define WTCPSERVER_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
+#define WTCPSERVER_DEBUG_DUMP    DEBUG_DUMP
+#else
+#define WTCPSERVER_DEBUG(...)
+#define WTCPSERVER_DEBUG_D(...)
+#define WTCPSERVER_DEBUG_DUMP
+#endif
+
 
 using namespace intorobot;
 
@@ -59,7 +73,8 @@ TCPServer::TCPServer(uint16_t port, network_interface_t nif) : _port(port), _nif
 bool TCPServer::begin()
 {
     stop();
-    if(!Network.from(_nif).ready()) {
+    if(!Network.from(_nif).ready() && !WiFi.getAPStatus()) {
+        WTCPSERVER_DEBUG("tcp server failed\r\n");
         return false;
     }
 
@@ -91,7 +106,8 @@ TCPClient TCPServer::available()
         begin();
     }
 
-    if((!Network.from(_nif).ready()) || (_sock == SOCKET_INVALID)) {
+    // if((!Network.from(_nif).ready()) || (_sock == SOCKET_INVALID)) {
+    if((!WiFi.getAPStatus()) || (_sock == SOCKET_INVALID)) {
         _sock = SOCKET_INVALID;
         _client = *s_invalid_client;
         return _client;
@@ -122,7 +138,7 @@ size_t TCPServer::write(const uint8_t *buffer, size_t size)
 
 uint8_t TCPServer::status()
 {
-    return (isOpen(_sock) && Network.from(_nif).ready() && (SOCKET_STATUS_ACTIVE == socket_active_status(_sock)));
+    return (isOpen(_sock) && ((Network.from(_nif).ready()) || (WiFi.getAPStatus())) && (SOCKET_STATUS_ACTIVE == socket_active_status(_sock)));
 }
 
 #endif

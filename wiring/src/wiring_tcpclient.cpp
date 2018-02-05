@@ -27,6 +27,7 @@
 #include "socket_hal.h"
 #include "inet_hal.h"
 #include "intorobot_macros.h"
+#include "wiring_wifi.h"
 
 //#define WIRING_TCPCLIENT_DEBUG
 
@@ -140,7 +141,7 @@ int TCPClient::available()
         flush_buffer();
     }
 
-    if(Network.from(nif).ready() && isOpen(_sock))
+    if(((Network.from(nif).ready()) || (WiFi.getAPStatus())) && isOpen(_sock))
     {
         // Have room
         if ( _total < arraySize(_buffer))
@@ -221,7 +222,7 @@ uint8_t TCPClient::connected()
 
 uint8_t TCPClient::status()
 {
-    return (isOpen(_sock) && Network.from(nif).ready() && (SOCKET_STATUS_ACTIVE == socket_active_status(_sock)));
+    return (isOpen(_sock) && ((Network.from(nif).ready()) || (WiFi.getAPStatus())) && (SOCKET_STATUS_ACTIVE == socket_active_status(_sock)));
 }
 
 TCPClient::operator bool()

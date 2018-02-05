@@ -96,6 +96,8 @@ DeviceConfigCmdType DeviceConfig::getMessageType(char *s) {
         return DEVICE_CONFIG_SEND_WIFI_INFO;
     } else if(!strcmp(s,"setNetworkCredentials")) {
         return DEVICE_CONFIG_SET_NETWORK_CREDENTIALS;
+    } else if(!strcmp(s,"setNetworkCredentialsExit")) {
+        return DEVICE_CONFIG_SET_NETWORK_CREDENTIALS_EXIT;
     } else if(!strcmp(s,"sendDeviceInfo")) {
         return DEVICE_CONFIG_SET_DEVICE_INFO;
     } else if(!strcmp(s,"setSecurity")) {
@@ -126,7 +128,7 @@ bool DeviceConfig::process(void)
     while(available()) {
         String tmp=readString();
 
-        //SCONFIG_DEBUG("OK! Rev: %s\r\n", (char *)tmp.c_str());
+        // SCONFIG_DEBUG("OK! Rev: %s\r\n", (char *)tmp.c_str());
         root = aJson.parse((char *)tmp.c_str());
         if (root == NULL) {break;}
 
@@ -160,6 +162,12 @@ bool DeviceConfig::process(void)
             case DEVICE_CONFIG_SEND_WIFI_INFO:          //设置wifi信息
             case DEVICE_CONFIG_SET_NETWORK_CREDENTIALS: //设置网络接入凭证
                 dealSetNetworkCredentials(root);
+                break;
+            case DEVICE_CONFIG_SET_NETWORK_CREDENTIALS_EXIT: //设置网络接入凭证并退出
+                dealSetNetworkCredentialsExit(root);
+                aJson.deleteItem(root);
+                _isConfigSuccessful = true;
+                close();
                 break;
             case DEVICE_CONFIG_SET_DEVICE_INFO:         //设置设备信息
                 dealSendDeviceInfo(root);
@@ -408,6 +416,39 @@ void DeviceConfig::dealSetNetworkCredentials(aJsonObject* root)
         }
         //network_disconnect(0, 0, NULL);
         //network_connect(0, 0, 0, NULL);
+        return;
+    }
+    aJson.deleteItem(root);
+    sendComfirm(201);
+#elif (defined configWIRING_CELLULAR_ENABLE) || (defined configWIRING_LORA_ENABLE)
+    aJson.deleteItem(root);
+    sendComfirm(201);
+#endif
+}
+
+void DeviceConfig::dealSetNetworkCredentialsExit(aJsonObject* root)
+{
+    aJsonObject* value_Object = aJson.getObjectItem(root, "value");
+    if (value_Object == NULL) {
+        aJson.deleteItem(root);
+        sendComfirm(201);
+        return;
+    }
+
+#ifdef configWIRING_WIFI_ENABLE
+    // wlan_Imlink_stop();
+    // network_disconnect(0, 0, NULL);
+    // network_connect(0, 0, 0, NULL);
+
+    aJsonObject* ssidObject = aJson.getObjectItem(value_Object, "ssid");
+    aJsonObject* passwdObject = aJson.getObjectItem(value_Object, "passwd");
+    if ((ssidObject != NULL) && (passwdObject != NULL)) {
+        sendComfirm(200);
+        if(0==strcmp(ssidObject->valuestring,"")) { //密码为空
+            WiFi.setCredentials(ssidObject->valuestring);
+        } else {
+            WiFi.setCredentials(ssidObject->valuestring, passwdObject->valuestring);
+        }
         return;
     }
     aJson.deleteItem(root);
@@ -796,6 +837,10 @@ void UsartDeviceConfig::close(void)
 #ifdef configSETUP_TCP_ENABLE
 void TcpDeviceConfig::init(void)
 {
+    network_setup(0, 0, NULL);
+    WiFi.on();
+    WiFi.startAP();
+    SCONFIG_DEBUG("wifi into ap mode\r\n");
     server.begin();
 }
 
@@ -808,11 +853,7 @@ void TcpDeviceConfig::sendComfirm(int status)
     aJson.addNumberToObject(root, "status", status);
     char* string = aJson.print(root);
     if(NULL != string) {
-        for(int i=0; i < 10; i++) //may be not enough
-        {
-            write((unsigned char *)string, strlen(string));
-            delay(100);
-        }
+        write((unsigned char *)string, strlen(string));
         free(string);
     }
     aJson.deleteItem(root);
@@ -856,6 +897,7 @@ size_t TcpDeviceConfig::write(const uint8_t *buf, size_t size)
 void TcpDeviceConfig::close(void)
 {
     client.stop();
+    server.stop();
 }
 #endif
 
@@ -1221,7 +1263,11 @@ void manage_system_config(void)
 {
     if(System.featureEnabled(SYSTEM_FEATURE_AUTO_CONFIG_PROCESS_ENABLED)) {
         if(SYSTEM_CONFIG_TYPE_NONE != get_system_config_type()) {
-            system_rgb_blink(RGB_COLOR_RED, 1000);
+            if(get_system_config_type() == SYSTEM_CONFIG_TYPE_AP)
+                system_rgb_blink(RGB_COLOR_CYAN, 1000);
+            else
+                system_rgb_blink(RGB_COLOR_RED, 1000);
+
             while(1) {
                 if(system_config_process()) {
                     break;

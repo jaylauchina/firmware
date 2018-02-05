@@ -228,6 +228,11 @@ int wlan_scan(wlan_scan_result_t callback, void* cookie);
 int wlan_set_macaddr(uint8_t *stamacaddr, uint8_t *apmacaddr);
 int wlan_get_macaddr(uint8_t *stamacaddr, uint8_t *apmacaddr);
 
+bool wlan_ap_config(HAL_IPAddress local_ip, HAL_IPAddress gateway, HAL_IPAddress subnet);
+bool wlan_set_ap(const char* ssid, const char* passphrase, int channel, int ssid_hidden, int max_connection);
+bool wlan_ap_disconnect(bool wifioff);
+
+
 #ifdef	__cplusplus
 }
 #endif
