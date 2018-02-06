@@ -187,7 +187,7 @@ uint8_t* esp8266_getMacAddress(uint8_t* mac) {
 bool esp8266_setDHCP(char enable)
 {
     if(true == enable) {
-        wifi_station_dhcpc_start();
+        DEBUG("station dhcpc=%d\r\n",wifi_station_dhcpc_start());
     } else {
         wifi_station_dhcpc_stop();
     }
