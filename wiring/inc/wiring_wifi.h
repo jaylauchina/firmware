@@ -217,6 +217,11 @@ public:
     bool closeAP(void);
     bool getAPStatus(void);
 
+    bool setAP(const char* ssid, const char* passphrase = NULL, int channel = 1, int ssid_hidden = 0, int max_connection = 4);
+    bool configAP(IPAddress local_ip, IPAddress gateway, IPAddress subnet);
+    void startAP(void);
+    bool closeAP(void);
+
 };
 
 extern WiFiClass WiFi;

@@ -122,6 +122,7 @@ extern "C" void HAL_SysTick_Handler(void)
             case BUTTON_MODE_CONFIG_IMLINK_SERIAL:
                 if(SYSTEM_CONFIG_TYPE_IMLINK_SERIAL != System.configCurrentMode()) {
                     System.configEnterMode(SYSTEM_CONFIG_TYPE_IMLINK_SERIAL);
+                    // System.configEnterMode(SYSTEM_CONFIG_TYPE_AP);
                 } else {
                     System.configExit();
                 }

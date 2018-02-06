@@ -136,7 +136,6 @@ namespace intorobot {
         return wifi_ap_status;
     }
 
-
 /********************************* Bug Notice *********************************
 On occasion, "wlan_ioctl_get_scan_results" only returns a single bad entry
 (with index 0). I suspect this happens when the CC3000 is refreshing the

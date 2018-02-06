@@ -701,3 +701,226 @@ bool wlan_ap_disconnect(bool wifioff)
     return ret;
 }
 
+/**
+ * compare two AP configurations
+ * @param lhs softap_config
+ * @param rhs softap_config
+ * @return equal
+ */
+static bool softap_config_equal(const softap_config& lhs, const softap_config& rhs) {
+    if(strcmp(reinterpret_cast<const char*>(lhs.ssid), reinterpret_cast<const char*>(rhs.ssid)) != 0) {
+        return false;
+    }
+    if(strcmp(reinterpret_cast<const char*>(lhs.password), reinterpret_cast<const char*>(rhs.password)) != 0) {
+        return false;
+    }
+    if(lhs.channel != rhs.channel) {
+        return false;
+    }
+    if(lhs.ssid_hidden != rhs.ssid_hidden) {
+        return false;
+    }
+    if(lhs.max_connection != rhs.max_connection) {
+        return false;
+    }
+    if(lhs.beacon_interval != rhs.beacon_interval) {
+        return false;
+    }
+    if(lhs.authmode != rhs.authmode) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Configure access point
+ * @param local_ip      access point IP
+ * @param gateway       gateway IP
+ * @param subnet        subnet mask
+ */
+bool wlan_ap_config(HAL_IPAddress local_ip, HAL_IPAddress gateway, HAL_IPAddress subnet)
+{
+    if(!esp8266_enableAP(true)) {
+        // enable AP failed
+        return false;
+    }
+    bool ret = true;
+
+    struct ip_info info;
+    info.ip.addr = static_cast<uint32_t>(local_ip.ipv4);
+    info.gw.addr = static_cast<uint32_t>(gateway.ipv4);
+    info.netmask.addr = static_cast<uint32_t>(subnet.ipv4);
+    DEBUG("ip addr=0x%x\r\n",info.ip.addr);
+    DEBUG("gw addr=0x%x\r\n",info.gw.addr);
+    DEBUG("netmask =0x%x\r\n",info.netmask.addr);
+
+    if(!wifi_softap_dhcps_stop()) {
+    }
+
+    if(!wifi_set_ip_info(SOFTAP_IF, &info)) {
+        ret = false;
+    }
+
+    struct dhcps_lease dhcp_lease;
+    HAL_IPAddress ip = local_ip;
+    ip.ipv4 += 0x63000000;
+    dhcp_lease.start_ip.addr = static_cast<uint32_t>(ip.ipv4);
+    DEBUG("dhcp_lease.start_ip.addr=0x%x\r\n",dhcp_lease.start_ip.addr);
+
+    ip.ipv4 += 0x64000000;
+    dhcp_lease.end_ip.addr = static_cast<uint32_t>(ip.ipv4);
+    DEBUG("dhcp_lease.end_ip.addr=0x%x\r\n",dhcp_lease.end_ip.addr);
+
+    if(!wifi_softap_set_dhcps_lease(&dhcp_lease)) {
+        ret = false;
+    }
+
+    // set lease time to 720min --> 12h
+    if(!wifi_softap_set_dhcps_lease_time(720)) {
+        ret = false;
+    }
+
+    uint8 mode = 1;
+    if(!wifi_softap_set_dhcps_offer_option(OFFER_ROUTER, &mode)) {
+        ret = false;
+    }
+
+    if(!wifi_softap_dhcps_start()) {
+        ret = false;
+    }
+
+    // check config
+    if(wifi_get_ip_info(SOFTAP_IF, &info)) {
+        if(info.ip.addr == 0x00000000) {
+            ret = false;
+        } else if(local_ip.ipv4 != info.ip.addr) {
+            ip.ipv4 = info.ip.addr;
+            ret = false;
+        } else {
+            DEBUG("ap config success\r\n");
+        }
+    } else {
+        ret = false;
+    }
+
+    return ret;
+}
+
+/**
+ * Set up an access point
+ * @param ssid              Pointer to the SSID (max 63 char).
+ * @param passphrase        (for WPA2 min 8 char, for open use NULL)
+ * @param channel           WiFi channel number, 1 - 13.
+ * @param ssid_hidden       Network cloaking (0 = broadcast SSID, 1 = hide SSID)
+ * @param max_connection    Max simultaneous connected clients, 1 - 4.
+ */
+bool wlan_set_ap(const char* ssid, const char* passphrase, int channel, int ssid_hidden, int max_connection)
+{
+    if(!esp8266_enableAP(true)) {
+        // enable AP failed
+        return false;
+    }
+
+    if(!ssid || strlen(ssid) == 0 || strlen(ssid) > 31) {
+        // fail SSID too long or missing!
+        return false;
+    }
+
+    if(passphrase && strlen(passphrase) > 0 && (strlen(passphrase) > 63 || strlen(passphrase) < 8)) {
+        // fail passphrase to long or short!
+        return false;
+    }
+
+    bool ret = true;
+
+    struct softap_config conf;
+    strcpy(reinterpret_cast<char*>(conf.ssid), ssid);
+    conf.channel = channel;
+    conf.ssid_len = strlen(ssid);
+    conf.ssid_hidden = ssid_hidden;
+    conf.max_connection = max_connection;
+    conf.beacon_interval = 100;
+
+    if(!passphrase || strlen(passphrase) == 0) {
+        conf.authmode = AUTH_OPEN;
+        *conf.password = 0;
+    } else {
+        conf.authmode = AUTH_WPA2_PSK;
+        strcpy(reinterpret_cast<char*>(conf.password), passphrase);
+    }
+
+    struct softap_config conf_current;
+    wifi_softap_get_config(&conf_current);
+    if(!softap_config_equal(conf, conf_current)) {
+
+        ETS_UART_INTR_DISABLE();
+        // if(WiFi._persistent) {
+            // ret = wifi_softap_set_config(&conf);
+        // } else {
+            ret = wifi_softap_set_config_current(&conf);
+        // }
+        ETS_UART_INTR_ENABLE();
+
+        if(!ret) {
+            return false;
+        }
+    }
+
+    if(wifi_softap_dhcps_status() != DHCP_STARTED) {
+        if(!wifi_softap_dhcps_start()) {
+            ret = false;
+        }
+    }
+
+    // check IP config
+    struct ip_info ip;
+    if(wifi_get_ip_info(SOFTAP_IF, &ip)) {
+        if(ip.ip.addr == 0x00000000) {
+            // Invalid config
+            //192.168.4.1 , 192.168.4.1 , 255.255.255.0
+            HAL_IPAddress local_ip = {0x0104A8C0};
+            HAL_IPAddress gateway_ip = {0x0104A8C0};
+            HAL_IPAddress subnet = {0x00FFFFFF};
+            ret = wlan_ap_config(local_ip, gateway_ip, subnet);
+            if(!ret) {
+                ret = false;
+            }
+        }
+    } else {
+        ret = false;
+    }
+
+    return ret;
+}
+
+/**
+ * Disconnect from the network (close AP)
+ * @param wifioff disable mode?
+ * @return one value of wl_status_t enum
+ */
+bool wlan_ap_disconnect(bool wifioff)
+{
+    bool ret;
+    struct softap_config conf;
+    *conf.ssid = 0;
+    *conf.password = 0;
+    conf.authmode = AUTH_OPEN;
+    ETS_UART_INTR_DISABLE();
+    // if(WiFi._persistent) {
+        // ret = wifi_softap_set_config(&conf);
+    // } else {
+        ret = wifi_softap_set_config_current(&conf);
+    // }
+    ETS_UART_INTR_ENABLE();
+
+    if(!ret) {
+        DEBUG("[APdisconnect] set_config failed!\r\n");
+    }
+
+    if(ret && wifioff) {
+        ret = esp8266_enableAP(false);
+    }
+
+    return ret;
+}
+
