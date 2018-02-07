@@ -30,6 +30,21 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #include "RegionCommon.h"
 #include "RegionCN470.h"
 
+#include "service_debug.h"
+
+#define REGION_CN470_DEBUG
+
+#ifdef  REGION_CN470_DEBUG
+#define REGION_CN470_DEBUG(...)  do {DEBUG(__VA_ARGS__);}while(0)
+#define REGION_CN470_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
+#define REGION_CN470_DEBUG_DUMP DEBUG_DUMP
+#else
+#define REGION_Cn470_DEBUG(...)
+#define REGION_Cn470_DEBUG_D(...)
+#define REGION_Cn470_DEBUG_DUMP
+#endif
+
+
 // Definitions
 #define CHANNELS_MASK_SIZE              6
 
@@ -486,6 +501,14 @@ bool RegionCN470RxConfig( RxConfigParams_t* rxConfig, int8_t* datarate )
 
     Radio.SetChannel( frequency );
 
+#if  1 
+    REGION_CN470_DEBUG("rx channel=%d\r\n",rxConfig->Channel);
+    REGION_CN470_DEBUG("rx freq=%d\r\n",frequency);
+    REGION_CN470_DEBUG("bandwidth = %d\r\n",rxConfig->Bandwidth);
+    REGION_CN470_DEBUG("datarate = %d\r\n",phyDr);
+    REGION_CN470_DEBUG("rxContinuous = %d\r\n",rxConfig->RxContinuous);
+#endif
+
     // Radio configuration
     Radio.SetRxConfig( MODEM_LORA, rxConfig->Bandwidth, phyDr, 1, 0, 8, rxConfig->WindowTimeout, false, 0, false, 0, 0, true, rxConfig->RxContinuous );
 
@@ -514,6 +537,14 @@ bool RegionCN470TxConfig( TxConfigParams_t* txConfig, int8_t* txPower, TimerTime
 
     // Setup the radio frequency
     Radio.SetChannel( Channels[txConfig->Channel].Frequency );
+
+#if 1
+    REGION_CN470_DEBUG("tx channel =%d\r\n",txConfig->Channel);
+    REGION_CN470_DEBUG("loramac tx frequency = %d\r\n",Channels[txConfig->Channel].Frequency);
+    REGION_CN470_DEBUG("tx power=%d\r\n",phyTxPower);
+    REGION_CN470_DEBUG("datarate=%d\r\n",phyDr);
+#endif
+
 
     Radio.SetTxConfig( MODEM_LORA, phyTxPower, 0, 0, phyDr, 1, 8, false, true, 0, 0, false, 3000 );
     // Setup maximum payload lenght of the radio driver

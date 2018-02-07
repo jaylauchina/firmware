@@ -167,7 +167,6 @@ bool DeviceConfig::process(void)
                 dealSetNetworkCredentialsExit(root);
                 aJson.deleteItem(root);
                 _isConfigSuccessful = true;
-                close();
                 break;
             case DEVICE_CONFIG_SET_DEVICE_INFO:         //设置设备信息
                 dealSendDeviceInfo(root);
@@ -898,6 +897,7 @@ void TcpDeviceConfig::close(void)
 {
     client.stop();
     server.stop();
+    WiFi.closeAP();
 }
 #endif
 

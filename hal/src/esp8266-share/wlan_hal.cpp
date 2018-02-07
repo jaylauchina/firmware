@@ -682,8 +682,8 @@ bool wlan_ap_disconnect(bool wifioff)
 {
     bool ret;
     struct softap_config conf;
-    *conf.ssid = 0;
-    *conf.password = 0;
+    *conf.ssid = {0};
+    *conf.password = {0};
     conf.authmode = AUTH_OPEN;
     ETS_UART_INTR_DISABLE();
     ret = wifi_softap_set_config_current(&conf);

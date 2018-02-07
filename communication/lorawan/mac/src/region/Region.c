@@ -30,7 +30,7 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #include "Region.h"
 
 #define REGION_EU433
-
+#define REGION_CN470
 
 // Setup regions
 #ifdef REGION_AS923
