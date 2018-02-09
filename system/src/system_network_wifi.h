@@ -95,6 +95,7 @@ public:
 
         credentials->security = security;
 
+        wlan_setup();
         int result = wlan_set_credentials(credentials);
         if (!result) {
             //system_notify_event(network_credentials, network_credentials_added, credentials);
