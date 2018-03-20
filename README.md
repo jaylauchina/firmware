@@ -19,7 +19,7 @@
 
 # 资源列表
 
-- [neutron stm32+esp8266 通讯AT扩展指令](docs/gettingstarted.md)
+- [Neutron STM32+ESP8266 通讯AT扩展指令说明](docs/neutron-esp8266-ex-at.md)
 - [MolmcBridge工具使用说明](http://docs.intoyun.com/devicedev/develop-tools/molmc-bridge-manual/)
 - [在线编程开发工具](http://docs.intoyun.com/devicedev/develop-tools/online-ide-user-manual/ant/)
 - [离线编程开发工具](http://docs.intoyun.com/devicedev/develop-tools/offline-ide-user-manual/)
