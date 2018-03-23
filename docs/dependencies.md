@@ -57,8 +57,9 @@ IntoRobot系列产品采用了ARM Cortex M3/M4 CPU处理器，该工具为arm处
 
 ### 6. esptool8266
 
-该工具为ESP8266芯片下载工具。
+该工具为ESP8266芯片烧录工具。
 
 ### 7. esptool32
 
-该工具为ESP32芯片下载工具。
+该工具为ESP32芯片烧录工具。
+

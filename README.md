@@ -9,7 +9,7 @@
 
 # 开发指南
 
-- [应用开发教程](docs/build.md)
+- [编译系统](docs/build.md)
 - [固件库API接口](http://docs.intoyun.com/devicedev/software-develop-master/master-sdk-api)
 
 # 更新记录
