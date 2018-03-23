@@ -19,9 +19,9 @@
 +-- platform                : 主要放置产品芯片厂家提供的SDK库，包括ESP8266,ESP32,STM32F1xx, STM32F4xx, STM32L1xx等。
 +-- services                : 辅助接口
 +-- system                  : 提供连接网络，配置，连接IntoYun/IntoRobot平台，在线编程，固件更新等功能
-+-- tools                   : 编译和烧录工具 
++-- tools                   : 编译和烧录工具
 +-- user                    : 括各个产品的默认应用代码， 各种应用代码，外部库，以及自动测试代码
 +-- wiring                  : Arduino兼容功能接口， 主要通过调用hal层接口
 +-- wiring_ex               : 针对于特定核心板扩展的函数接口， 主要通过调用hal层接口
-    
+
 ```
