@@ -243,24 +243,23 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
     switch( mlmeConfirm->MlmeRequest ) {
         case MLME_JOIN:
             {
-                if( mlmeConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK ) {
-                    // Status is OK, node has joined the network
-                    if(!System.featureEnabled(SYSTEM_FEATURE_STANDARD_LORAWAN_ENABLED)) {
-                        uint16_t channelMask = 0;
-                        uint8_t lastChannel = LoRaMacGetLastTxChannel();
-                        channelMask = 1 << lastChannel;
+                // Status is OK, node has joined the network
+                if(!System.featureEnabled(SYSTEM_FEATURE_STANDARD_LORAWAN_ENABLED)){
+                    #if 0
+                    uint16_t channelMask = 0;
+                    uint8_t lastChannel = LoRaMacGetLastTxChannel();
+                    channelMask = 1 << lastChannel;
 
-                        MibRequestConfirm_t mibReq;
-                        mibReq.Type = MIB_CHANNELS_DEFAULT_MASK;
-                        mibReq.Param.ChannelsDefaultMask = &channelMask;
-                        LoRaMacMibSetRequestConfirm( &mibReq );
+                    MibRequestConfirm_t mibReq;
+                    mibReq.Type = MIB_CHANNELS_DEFAULT_MASK;
+                    mibReq.Param.ChannelsDefaultMask = &channelMask;
+                    LoRaMacMibSetRequestConfirm( &mibReq );
 
-                        mibReq.Type = MIB_CHANNELS_MASK;
-                        mibReq.Param.ChannelsMask = &channelMask;
-                        LoRaMacMibSetRequestConfirm( &mibReq );
-                        SLORAWAN_DEBUG("lorawan close other channel\r\n");
-                    }
-
+                    mibReq.Type = MIB_CHANNELS_MASK;
+                    mibReq.Param.ChannelsMask = &channelMask;
+                    LoRaMacMibSetRequestConfirm( &mibReq );
+                    SLORAWAN_DEBUG("lorawan close other channel\r\n");
+                    #endif
                     LoRaWanOnEvent(LORAWAN_EVENT_JOINED);
                 } else {
                     // Join was not successful. Try to join again
@@ -375,7 +374,8 @@ void LoRaWanResume(void)
     LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
     LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
     LoRaMacCallbacks.GetBatteryLevel = BoardGetBatteryLevel;
-    LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU433);
+    //LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU433);
+    LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_CN470);
 
     DEBUG("loramac init!!!\r\n");
     DEBUG("sync word = 0x%x\r\n",SX1276Read(0x39));
