@@ -19,6 +19,11 @@
 
 #include "wiring_cloud.h"
 
+
+#ifndef configNO_LORAWAN
+protocol_mode_t CloudClass::_mode = PROTOCOL_LORAWAN;    //协议模式
+#endif
+
 #if (!defined configNO_CLOUD) || (!defined configNO_LORAWAN)
 
 CloudClass& __fetch_global_cloud()

@@ -325,15 +325,22 @@ class CloudClass: public CloudDatepointClass {
         static void setProtocol(protocol_mode_t mode){
             if(mode == PROTOCOL_LORAWAN){
                 LoRaWanResume();
-            }else{
+            } else {
                 LoRaWanPause();
             }
+            _mode = mode;
+        }
+        static protocol_mode_t getProtocol(void) {
+            return _mode;
         }
         static void process(void) {
             //application_checkin();
             intorobot_process();
         }
         static String deviceID(void) { return intorobot_deviceID(); }
+
+    public:
+        static protocol_mode_t _mode;    //协议模式
 };
 #endif
 

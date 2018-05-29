@@ -369,13 +369,23 @@ void LoRaWanPause(void)
 
 void LoRaWanResume(void)
 {
+    LoRaMacRegion_t region;
+
     System.enableFeature(SYSTEM_FEATURE_LORAMAC_RUN_ENABLED);
     SX1276BoardInit(); //初始化1278
     LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
     LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
     LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
     LoRaMacCallbacks.GetBatteryLevel = BoardGetBatteryLevel;
-    LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU433);
+    switch(LoRaWan._region) {
+        case LORAWAN_REGION_CN470:   //CN470频段
+            region = LORAMAC_REGION_CN470;
+            break;
+        default:
+            region = LORAMAC_REGION_EU433;
+            break;
+    }
+    LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, region);
 
     DEBUG("loramac init!!!\r\n");
     DEBUG("sync word = 0x%x\r\n",SX1276Read(0x39));

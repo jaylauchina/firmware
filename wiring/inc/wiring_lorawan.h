@@ -26,26 +26,32 @@ typedef struct sLoRaWanParams{
     uint8_t  devEui[8];
     uint8_t  appEui[8];
     uint8_t  appKey[16];
-}lorawan_params_t;
+} lorawan_params_t;
 
 typedef enum
 {
     JOIN_ABP = 0,
     JOIN_OTAA,
-}join_mode_t;
+} join_mode_t;
 
 typedef enum
 {
     PROTOCOL_LORAWAN = 0,
     PROTOCOL_P2P,
-}protocol_mode_t;
+} protocol_mode_t;
 
 typedef enum
 {
     LORAWAN_STANDARD = 0,           //符合官方标准LoRaWan协议
     LORAWAN_STANDARD_EXTEND,        //符合官方标准LoRaWan协议，添加IntoYun平台特性。
     LORAWAN_NONSTANDARD_EXTEND      //修正官方标准LoRaWan协议，添加IntoYun平台特性。
-}lorawan_protocol_t;
+} lorawan_protocol_t;
+
+typedef enum
+{
+    LORAWAN_REGION_EU433 = 0,    //EU433频段
+    LORAWAN_REGION_CN470,        //CN470频段
+} lorawan_region_t;
 
 class LoRaWanClass
 {
@@ -57,6 +63,7 @@ class LoRaWanClass
         int8_t sendStatus(void);
         uint16_t receive(uint8_t *buffer, uint16_t length, int *rssi);                       //返回接收数据
         void setProtocol(lorawan_protocol_t type);
+        void setRegion(lorawan_region_t region);
         void setOTAAParams(char *devEui, char *appEui, char *appKey);   //设置OTAA入网参数
         void setABPParams(char *devAddr, char *nwkSkey, char *appSkey); //设置ABP入网参数
         void getDeviceEUI(char *devEui, uint16_t len);    //获取deviceeui
@@ -120,6 +127,7 @@ class LoRaWanClass
         uint8_t _macDatarate = DR_3;          //设置发送速率
         uint8_t _macRunStatus = 0;            //mac运行状态 内部使用处理
         int8_t _macSendStatus = 0;            //发送状态
+        lorawan_region_t _region = LORAWAN_REGION_EU433; //频段
 
     private:
 };
