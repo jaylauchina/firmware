@@ -105,6 +105,21 @@ uint8_t RegionCommonValueInRange( int8_t value, int8_t min, int8_t max )
     return 0;
 }
 
+bool RegionCommonChanEnable( uint16_t* channelsMask, uint8_t id, uint8_t maxChannels )
+{
+    uint8_t index = id / 16;
+
+    if( ( index > ( maxChannels / 16 ) ) || ( id >= maxChannels ) )
+    {
+        return false;
+    }
+
+    // Activate channel
+    channelsMask[index] |= ( 1 << ( id % 16 ) );
+
+    return true;
+}
+
 bool RegionCommonChanDisable( uint16_t* channelsMask, uint8_t id, uint8_t maxChannels )
 {
     uint8_t index = id / 16;
@@ -119,6 +134,19 @@ bool RegionCommonChanDisable( uint16_t* channelsMask, uint8_t id, uint8_t maxCha
 
     return true;
 }
+
+bool RegionCommonGetChanStatus( uint16_t* channelsMask, uint8_t id, uint8_t maxChannels )
+{
+    uint8_t index = id / 16;
+
+    if( ( index > ( maxChannels / 16 ) ) || ( id >= maxChannels ) )
+    {
+        return false;
+    }
+
+    return channelsMask[index] & ( 1 << ( id % 16 ) ) ? true : false;
+}
+
 
 uint8_t RegionCommonCountChannels( uint16_t* channelsMask, uint8_t startIdx, uint8_t stopIdx )
 {

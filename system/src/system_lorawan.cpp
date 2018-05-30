@@ -388,9 +388,9 @@ void LoRaWanResume(void)
     LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, region);
 
     DEBUG("loramac init!!!\r\n");
-    DEBUG("sync word = 0x%x\r\n",SX1276Read(0x39));
+    DEBUG("sync word = 0x%x\r\n", SX1276Read(0x39));
     DEBUG("sx1278 version = 0x%x\r\n", SX1276GetVersion());
-    DEBUG("sx1278 freq = %d\r\n",SX1276LoRaGetRFFrequency());
+    DEBUG("sx1278 freq = %d\r\n", SX1276LoRaGetRFFrequency());
 
     MibRequestConfirm_t mibReq;
 

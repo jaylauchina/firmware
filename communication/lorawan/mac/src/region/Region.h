@@ -1491,6 +1491,9 @@ uint8_t RegionApplyDrOffset( LoRaMacRegion_t region, uint8_t downlinkDwellTime, 
 /*! \} defgroup REGION */
 
 //lz-modfiy
+bool RegionSetChannelStatus(LoRaMacRegion_t region, uint8_t id , bool enable);
+bool RegionGetChannelStatus(LoRaMacRegion_t region, uint8_t id );
+uint8_t RegionGetChannelMaxNb(LoRaMacRegion_t region);
 //获取通道频率
 uint32_t RegionGetChannelFreq(LoRaMacRegion_t region, uint8_t id);
 //获取通道速率

@@ -210,6 +210,20 @@ bool RegionCommonChanVerifyDr( uint8_t nbChannels, uint16_t* channelsMask, int8_
                             int8_t minDr, int8_t maxDr, ChannelParams_t* channels );
 
 /*!
+ * \brief Enables a channel in a given channels mask.
+ *        This is a generic function and valid for all regions.
+ *
+ * \param [IN] channelsMask The channels mask of the region.
+ *
+ * \param [IN] id The id of the channels mask to disable.
+ *
+ * \param [IN] maxChannels Maximum number of channels.
+ *
+ * \retval Returns true if the channel could be enabled, false if not.
+ */
+bool RegionCommonChanEnable( uint16_t* channelsMask, uint8_t id, uint8_t maxChannels );
+
+/*!
  * \brief Disables a channel in a given channels mask.
  *        This is a generic function and valid for all regions.
  *
@@ -222,6 +236,20 @@ bool RegionCommonChanVerifyDr( uint8_t nbChannels, uint16_t* channelsMask, int8_
  * \retval Returns true if the channel could be disabled, false if not.
  */
 bool RegionCommonChanDisable( uint16_t* channelsMask, uint8_t id, uint8_t maxChannels );
+
+/*!
+ * \brief Get a channel Status in a given channels mask.
+ *        This is a generic function and valid for all regions.
+ *
+ * \param [IN] channelsMask The channels mask of the region.
+ *
+ * \param [IN] id The id of the channels mask to disable.
+ *
+ * \param [IN] maxChannels Maximum number of channels.
+ *
+ * \retval Returns true if the channel enable, false if not.
+ */
+bool RegionCommonGetChanStatus( uint16_t* channelsMask, uint8_t id, uint8_t maxChannels );
 
 /*!
  * \brief Counts the number of active channels in a given channels mask.

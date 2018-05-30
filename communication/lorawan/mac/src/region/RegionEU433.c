@@ -118,8 +118,7 @@ static bool VerifyTxFreq( uint32_t freq )
         return false;
     }
 
-    /* if( ( freq < 433175000 ) || ( freq > 434665000 ) ) */
-    if( ( freq < 137000000 ) || ( freq > 525000000 ) )
+    if( ( freq < 433175000 ) || ( freq > 434665000 ) )
     {
         return false;
     }
@@ -583,7 +582,7 @@ bool RegionEU433RxConfig( RxConfigParams_t* rxConfig, int8_t* datarate )
 
     Radio.SetChannel( frequency );
 
-    #if  0 
+    #if  0
     REGION_EU433_DEBUG("rx freq=%d\r\n",frequency);
     REGION_EU433_DEBUG("bandwidth = %d\r\n",rxConfig->Bandwidth);
     REGION_EU433_DEBUG("datarate = %d\r\n",phyDr);
@@ -1098,6 +1097,25 @@ uint8_t RegionEU433ApplyDrOffset( uint8_t downlinkDwellTime, int8_t dr, int8_t d
 }
 
 //lz-modify add
+bool RegionEU433SetChannelStatus( uint8_t id , bool enable)
+{
+    if(enable) {
+        return RegionCommonChanEnable( ChannelsMask, id, EU433_MAX_NB_CHANNELS );
+    } else {
+        return RegionCommonChanDisable( ChannelsMask, id, EU433_MAX_NB_CHANNELS );
+    }
+}
+
+bool RegionEU433GetChannelStatus( uint8_t id )
+{
+    return RegionCommonGetChanStatus( ChannelsMask, id, EU433_MAX_NB_CHANNELS );
+}
+
+uint8_t RegionEU433GetChannelMaxNb(void)
+{
+    return EU433_MAX_NB_CHANNELS;
+}
+
 uint32_t RegionEU433GetChannelFreq(uint8_t id)
 {
     return Channels[id].Frequency;

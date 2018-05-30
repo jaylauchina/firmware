@@ -79,6 +79,7 @@ class LoRaWanClass
         bool getAdrOn(void);                              //获取ADR自适应速率开关
         uint16_t getDutyCyclePrescaler(void);             //获取占空比分频参数
         void setDutyCyclePrescaler(uint16_t dutyCycle);   //设置占空比分频参数
+        uint8_t getChannelMaxNb();                        //获取频段通道总数量
         void setChannelFreq(uint8_t channel, uint32_t freq);                    //设置通道频率
         uint32_t getChannelFreq(uint8_t channel);                               //获取通道频率
         void setChannelDRRange(uint8_t channel, uint8_t minDR, uint8_t maxDR);  //设置通道速率范围

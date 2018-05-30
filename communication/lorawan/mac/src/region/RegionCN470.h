@@ -436,6 +436,14 @@ void RegionCN470SetContinuousWave( ContinuousWaveParams_t* continuousWave );
  */
 uint8_t RegionCN470ApplyDrOffset( uint8_t downlinkDwellTime, int8_t dr, int8_t drOffset );
 
+bool RegionCN470SetChannelStatus( uint8_t id , bool enable);
+bool RegionCN470GetChannelStatus( uint8_t id );
+uint8_t RegionCN470GetChannelMaxNb(void);
+uint32_t RegionCN470GetChannelFreq(uint8_t id);
+void RegionCN470GetChannelDRRange(uint8_t id, uint8_t *minDR, uint8_t *maxDR);
+void RegionCN470SetDutyCycle(uint16_t dutyCycle);
+uint16_t RegionCN470GetDutyCycle(void);
+
 /*! \} defgroup REGIONCN470 */
 
 #endif // __REGION_CN470_H__

@@ -29,6 +29,19 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #include "Region.h"
 #include "RegionCommon.h"
 #include "RegionCN470.h"
+#include "service_debug.h"
+
+#define REGION_CN470_DEBUG
+#ifdef  REGION_CN470_DEBUG
+#define REGION_CN470_DEBUG(...)  do {DEBUG(__VA_ARGS__);}while(0)
+#define REGION_CN470_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
+#define REGION_CN470_DEBUG_DUMP DEBUG_DUMP
+#else
+#define REGION_CN470_DEBUG(...)
+#define REGION_CN470_DEBUG_D(...)
+#define REGION_CN470_DEBUG_DUMP
+#endif
+
 
 // Definitions
 #define CHANNELS_MASK_SIZE              6
@@ -97,6 +110,21 @@ static int8_t LimitTxPower( int8_t txPower, int8_t maxBandTxPower, int8_t datara
     return txPowerResult;
 }
 
+static bool VerifyTxFreq( uint32_t freq )
+{
+    // Check radio driver support
+    if( Radio.CheckRfFrequency( freq ) == false )
+    {
+        return false;
+    }
+
+    if( ( freq < 470300000 ) || ( freq > 489300000 ) )
+    {
+        return false;
+    }
+    return true;
+}
+
 static uint8_t CountNbOfEnabledChannels( uint8_t datarate, uint16_t* channelsMask, ChannelParams_t* channels, Band_t* bands, uint8_t* enabledChannels, uint8_t* delayTx )
 {
     uint8_t nbEnabledChannels = 0;
@@ -115,7 +143,14 @@ static uint8_t CountNbOfEnabledChannels( uint8_t datarate, uint16_t* channelsMas
                 if( RegionCommonValueInRange( datarate, channels[i + j].DrRange.Fields.Min,
                                               channels[i + j].DrRange.Fields.Max ) == false )
                 { // Check if the current channel selection supports the given datarate
-                    continue;
+                    //lz-modify
+                    if(UseLoRaWanStandardProtocol())
+                    {
+                        REGION_CN470_DEBUG("region eu470 datarate is not supported\r\n");
+                        continue;
+                    }
+                    //end===
+                    /* continue; */
                 }
                 if( bands[channels[i + j].Band].TimeOff > 0 )
                 { // Check if the band is available for transmission
@@ -485,6 +520,12 @@ bool RegionCN470RxConfig( RxConfigParams_t* rxConfig, int8_t* datarate )
     phyDr = DataratesCN470[dr];
 
     Radio.SetChannel( frequency );
+#if 0
+    REGION_CN470_DEBUG("rx freq=%d\r\n",frequency);
+    REGION_CN470_DEBUG("bandwidth = %d\r\n",rxConfig->Bandwidth);
+    REGION_CN470_DEBUG("datarate = %d\r\n",phyDr);
+    REGION_CN470_DEBUG("rxContinuous = %d\r\n",rxConfig->RxContinuous);
+#endif
 
     // Radio configuration
     Radio.SetRxConfig( MODEM_LORA, rxConfig->Bandwidth, phyDr, 1, 0, 8, rxConfig->WindowTimeout, false, 0, false, 0, 0, true, rxConfig->RxContinuous );
@@ -514,6 +555,11 @@ bool RegionCN470TxConfig( TxConfigParams_t* txConfig, int8_t* txPower, TimerTime
 
     // Setup the radio frequency
     Radio.SetChannel( Channels[txConfig->Channel].Frequency );
+#if 1
+    REGION_CN470_DEBUG("loramac tx frequency = %d\r\n",Channels[txConfig->Channel].Frequency);
+    REGION_CN470_DEBUG("tx power=%d\r\n",phyTxPower);
+    REGION_CN470_DEBUG("datarate=%d\r\n",phyDr);
+#endif
 
     Radio.SetTxConfig( MODEM_LORA, phyTxPower, 0, 0, phyDr, 1, 8, false, true, 0, 0, false, 3000 );
     // Setup maximum payload lenght of the radio driver
@@ -754,6 +800,13 @@ bool RegionCN470NextChannel( NextChanParams_t* nextChanParams, uint8_t* channel,
     {
         // We found a valid channel
         *channel = enabledChannels[randr( 0, nbEnabledChannels - 1 )];
+        //lz-modify add
+        if(!UseLoRaWanStandardProtocol())
+        {
+            REGION_CN470_DEBUG("region cn470 select datarate\r\n");
+            LoRaMacParams.ChannelsDatarate = randr( Channels[*channel].DrRange.Fields.Min, Channels[*channel].DrRange.Fields.Max );
+        }
+        //======
 
         *time = 0;
         return true;
@@ -774,12 +827,62 @@ bool RegionCN470NextChannel( NextChanParams_t* nextChanParams, uint8_t* channel,
 
 LoRaMacStatus_t RegionCN470ChannelAdd( ChannelAddParams_t* channelAdd )
 {
-    return LORAMAC_STATUS_PARAMETER_INVALID;
+    uint8_t band = 0;
+    bool drInvalid = false;
+    bool freqInvalid = false;
+    uint8_t id = channelAdd->ChannelId;
+
+    // Validate the datarate range
+    if( RegionCommonValueInRange( channelAdd->NewChannel->DrRange.Fields.Min, CN470_TX_MIN_DATARATE, CN470_TX_MAX_DATARATE ) == false )
+    {
+        drInvalid = true;
+    }
+    if( RegionCommonValueInRange( channelAdd->NewChannel->DrRange.Fields.Max, CN470_TX_MIN_DATARATE, CN470_TX_MAX_DATARATE ) == false )
+    {
+        drInvalid = true;
+    }
+    if( channelAdd->NewChannel->DrRange.Fields.Min > channelAdd->NewChannel->DrRange.Fields.Max )
+    {
+        drInvalid = true;
+    }
+
+    // Check frequency
+    if( freqInvalid == false )
+    {
+        if( VerifyTxFreq( channelAdd->NewChannel->Frequency ) == false )
+        {
+            freqInvalid = true;
+        }
+    }
+
+    // Check status
+    if( ( drInvalid == true ) && ( freqInvalid == true ) )
+    {
+        return LORAMAC_STATUS_FREQ_AND_DR_INVALID;
+    }
+    if( drInvalid == true )
+    {
+        return LORAMAC_STATUS_DATARATE_INVALID;
+    }
+    if( freqInvalid == true )
+    {
+        return LORAMAC_STATUS_FREQUENCY_INVALID;
+    }
+
+    memcpy( &(Channels[id]), channelAdd->NewChannel, sizeof( Channels[id] ) );
+    Channels[id].Band = band;
+    RegionCommonChanEnable( ChannelsMask, id, CN470_MAX_NB_CHANNELS );
+    return LORAMAC_STATUS_OK;
 }
 
-bool RegionCN470ChannelsRemove( ChannelRemoveParams_t* channelRemove  )
+bool RegionCN470ChannelsRemove( ChannelRemoveParams_t* channelRemove )
 {
-    return LORAMAC_STATUS_PARAMETER_INVALID;
+    uint8_t id = channelRemove->ChannelId;
+
+    // Remove the channel from the list of channels
+    Channels[id] = ( ChannelParams_t ){ 0, 0, { 0 }, 0 };
+
+    return RegionCommonChanDisable( ChannelsMask, id, CN470_MAX_NB_CHANNELS );
 }
 
 void RegionCN470SetContinuousWave( ContinuousWaveParams_t* continuousWave )
@@ -803,4 +906,44 @@ uint8_t RegionCN470ApplyDrOffset( uint8_t downlinkDwellTime, int8_t dr, int8_t d
         datarate = DR_0;
     }
     return datarate;
+}
+//lz-modify add
+bool RegionCN470SetChannelStatus( uint8_t id , bool enable)
+{
+    if(enable) {
+        return RegionCommonChanEnable( ChannelsMask, id, CN470_MAX_NB_CHANNELS );
+    } else {
+        return RegionCommonChanDisable( ChannelsMask, id, CN470_MAX_NB_CHANNELS );
+    }
+}
+
+bool RegionCN470GetChannelStatus( uint8_t id )
+{
+    return RegionCommonGetChanStatus( ChannelsMask, id, CN470_MAX_NB_CHANNELS );
+}
+
+uint8_t RegionCN470GetChannelMaxNb(void)
+{
+    return CN470_MAX_NB_CHANNELS;
+}
+
+uint32_t RegionCN470GetChannelFreq(uint8_t id)
+{
+    return Channels[id].Frequency;
+}
+
+void RegionCN470GetChannelDRRange(uint8_t id, uint8_t *minDR, uint8_t *maxDR)
+{
+    *minDR = (uint8_t)Channels[id].DrRange.Fields.Min;
+    *maxDR = (uint8_t)Channels[id].DrRange.Fields.Max;
+}
+
+void RegionCN470SetDutyCycle(uint16_t dutyCycle)
+{
+    Bands[0].DCycle = dutyCycle;
+}
+
+uint16_t RegionCN470GetDutyCycle(void)
+{
+    return Bands[0].DCycle;
 }

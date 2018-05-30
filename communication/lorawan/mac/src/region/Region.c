@@ -164,6 +164,14 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #define CN470_CHANNEL_REMOVE( )                    CN470_CASE { return RegionCN470ChannelsRemove( channelRemove ); }
 #define CN470_SET_CONTINUOUS_WAVE( )               CN470_CASE { RegionCN470SetContinuousWave( continuousWave ); break; }
 #define CN470_APPLY_DR_OFFSET( )                   CN470_CASE { return RegionCN470ApplyDrOffset( downlinkDwellTime, dr, drOffset ); }
+//lz-modify
+#define CN470_SET_CHANNEL_STATUS( )                CN470_CASE {return RegionCN470SetChannelStatus( id , enable);}
+#define CN470_GET_CHANNEL_STATUS( )                CN470_CASE {return RegionCN470GetChannelStatus( id );}
+#define CN470_GET_CHANNEL_MAX_NB( )                CN470_CASE {return RegionCN470GetChannelMaxNb();}
+#define CN470_GET_CHANNEL_FREQ( )                  CN470_CASE {return RegionCN470GetChannelFreq( id );}
+#define CN470_GET_CHANNEL_DRRANGE( )               CN470_CASE { RegionCN470GetChannelDRRange( id, minDR, maxDR ); break;}
+#define CN470_SET_DUTYCYCLE( )                     CN470_CASE { RegionCN470SetDutyCycle( dutyCycle); break;}
+#define CN470_GET_DUTYCYCLE( )                     CN470_CASE { return RegionCN470GetDutyCycle( );}
 #else
 #define CN470_IS_ACTIVE( )
 #define CN470_GET_PHY_PARAM( )
@@ -188,6 +196,14 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #define CN470_CHANNEL_REMOVE( )
 #define CN470_SET_CONTINUOUS_WAVE( )
 #define CN470_APPLY_DR_OFFSET( )
+//lz-modify
+#define CN470_SET_CHANNEL_STATUS( )
+#define CN470_GET_CHANNEL_STATUS( )
+#define CN470_GET_CHANNEL_MAX_NB( )
+#define CN470_GET_CHANNEL_FREQ( )
+#define CN470_GET_CHANNEL_DRRANG( )
+#define CN470_SET_DUTYCYCLE( )
+#define CN470_GET_DUTYCYCLE( )
 #endif
 
 #ifdef REGION_CN779
@@ -269,6 +285,9 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #define EU433_SET_CONTINUOUS_WAVE( )               EU433_CASE { RegionEU433SetContinuousWave( continuousWave ); break; }
 #define EU433_APPLY_DR_OFFSET( )                   EU433_CASE { return RegionEU433ApplyDrOffset( downlinkDwellTime, dr, drOffset ); }
 //lz-modify
+#define EU433_SET_CHANNEL_STATUS( )                EU433_CASE {return RegionEU433SetChannelStatus( id , enable);}
+#define EU433_GET_CHANNEL_STATUS( )                EU433_CASE {return RegionEU433GetChannelStatus( id );}
+#define EU433_GET_CHANNEL_MAX_NB( )                EU433_CASE {return RegionEU433GetChannelMaxNb();}
 #define EU433_GET_CHANNEL_FREQ( )                  EU433_CASE {return RegionEU433GetChannelFreq( id );}
 #define EU433_GET_CHANNEL_DRRANGE( )               EU433_CASE { RegionEU433GetChannelDRRange( id, minDR, maxDR ); break;}
 #define EU433_SET_DUTYCYCLE( )                     EU433_CASE { RegionEU433SetDutyCycle( dutyCycle); break;}
@@ -297,6 +316,10 @@ Maintainer: Miguel Luis ( Semtech ), Gregory Cristian ( Semtech ) and Daniel Jae
 #define EU433_CHANNEL_REMOVE( )
 #define EU433_SET_CONTINUOUS_WAVE( )
 #define EU433_APPLY_DR_OFFSET( )
+//lz-modify
+#define EU433_SET_CHANNEL_STATUS( )
+#define EU433_GET_CHANNEL_STATUS( )
+#define EU433_GET_CHANNEL_MAX_NB( )
 #define EU433_GET_CHANNEL_FREQ( )
 #define EU433_GET_CHANNEL_DRRANG( )
 #define EU433_SET_DUTYCYCLE( )
@@ -1048,15 +1071,55 @@ uint8_t RegionApplyDrOffset( LoRaMacRegion_t region, uint8_t downlinkDwellTime, 
 }
 
 //lz-modfiy
+bool RegionSetChannelStatus(LoRaMacRegion_t region, uint8_t id , bool enable)
+{
+    switch( region )
+    {
+        EU433_SET_CHANNEL_STATUS( );
+        CN470_SET_CHANNEL_STATUS( );
+        default:
+        {
+            return 0;
+        }
+    }
+}
+
+bool RegionGetChannelStatus(LoRaMacRegion_t region, uint8_t id )
+{
+    switch( region )
+    {
+        EU433_GET_CHANNEL_STATUS( );
+        CN470_GET_CHANNEL_STATUS( );
+        default:
+        {
+            return 0;
+        }
+    }
+}
+
+uint8_t RegionGetChannelMaxNb(LoRaMacRegion_t region)
+{
+    switch( region )
+    {
+        EU433_GET_CHANNEL_MAX_NB( );
+        CN470_GET_CHANNEL_MAX_NB( );
+        default:
+        {
+            return 0;
+        }
+    }
+}
+
 uint32_t RegionGetChannelFreq(LoRaMacRegion_t region, uint8_t id)
 {
     switch( region )
     {
         EU433_GET_CHANNEL_FREQ( );
-    default:
-    {
-        return 0;
-    }
+        CN470_GET_CHANNEL_FREQ( );
+        default:
+        {
+            return 0;
+        }
     }
 }
 
@@ -1065,10 +1128,11 @@ void RegionGetChannelDRRange(LoRaMacRegion_t region, uint8_t id, uint8_t *minDR,
     switch( region )
     {
         EU433_GET_CHANNEL_DRRANGE( );
-    default:
-    {
-        return;
-    }
+        CN470_GET_CHANNEL_DRRANGE( );
+        default:
+        {
+            return;
+        }
     }
 
 }
@@ -1078,10 +1142,11 @@ void RegionSetDutyCycle(LoRaMacRegion_t region, uint16_t dutyCycle)
     switch( region )
     {
         EU433_SET_DUTYCYCLE( );
-    default:
-    {
-        return;
-    }
+        CN470_SET_DUTYCYCLE( );
+        default:
+        {
+            return;
+        }
     }
 }
 
@@ -1090,9 +1155,10 @@ uint16_t RegionGetDutyCycle(LoRaMacRegion_t region)
     switch( region )
     {
         EU433_GET_DUTYCYCLE( );
-    default:
-    {
-        return;
-    }
+        CN470_GET_DUTYCYCLE( );
+        default:
+        {
+            return;
+        }
     }
 }

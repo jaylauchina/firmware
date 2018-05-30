@@ -1022,30 +1022,22 @@ void SX1276SetRx( uint32_t timeout )
     memset( RxTxBuffer, 0, ( size_t )RX_BUFFER_SIZE );
 
     SX1276.Settings.State = RF_RX_RUNNING;
-    if( timeout != 0 )
-    {
+    if( timeout != 0 ) {
         TimerSetValue( &RxTimeoutTimer, timeout );
         TimerStart( &RxTimeoutTimer );
     }
 
-    if( SX1276.Settings.Modem == MODEM_FSK )
-    {
+    if( SX1276.Settings.Modem == MODEM_FSK ) {
         SX1276SetOpMode( RF_OPMODE_RECEIVER );
 
-        if( rxContinuous == false )
-        {
+        if( rxContinuous == false ) {
             TimerSetValue( &RxTimeoutSyncWord, SX1276.Settings.Fsk.RxSingleTimeout );
             TimerStart( &RxTimeoutSyncWord );
         }
-    }
-    else
-    {
-        if( rxContinuous == true )
-        {
+    } else {
+        if( rxContinuous == true ) {
             SX1276SetOpMode( RFLR_OPMODE_RECEIVER );
-        }
-        else
-        {
+        } else {
             SX1276SetOpMode( RFLR_OPMODE_RECEIVER_SINGLE );
         }
     }
@@ -1118,32 +1110,32 @@ void SX1276StartCad( void )
 {
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        {
+        case MODEM_FSK:
+            {
 
-        }
-        break;
-    case MODEM_LORA:
-        {
-            SX1276Write( REG_LR_IRQFLAGSMASK, RFLR_IRQFLAGS_RXTIMEOUT |
-                                        RFLR_IRQFLAGS_RXDONE |
-                                        RFLR_IRQFLAGS_PAYLOADCRCERROR |
-                                        RFLR_IRQFLAGS_VALIDHEADER |
-                                        RFLR_IRQFLAGS_TXDONE |
-                                        //RFLR_IRQFLAGS_CADDONE |
-                                        RFLR_IRQFLAGS_FHSSCHANGEDCHANNEL // |
-                                        //RFLR_IRQFLAGS_CADDETECTED
-                                        );
+            }
+            break;
+        case MODEM_LORA:
+            {
+                SX1276Write( REG_LR_IRQFLAGSMASK, RFLR_IRQFLAGS_RXTIMEOUT |
+                        RFLR_IRQFLAGS_RXDONE |
+                        RFLR_IRQFLAGS_PAYLOADCRCERROR |
+                        RFLR_IRQFLAGS_VALIDHEADER |
+                        RFLR_IRQFLAGS_TXDONE |
+                        //RFLR_IRQFLAGS_CADDONE |
+                        RFLR_IRQFLAGS_FHSSCHANGEDCHANNEL // |
+                        //RFLR_IRQFLAGS_CADDETECTED
+                        );
 
-            // DIO3=CADDone
-            SX1276Write( REG_DIOMAPPING1, ( SX1276Read( REG_DIOMAPPING1 ) & RFLR_DIOMAPPING1_DIO3_MASK ) | RFLR_DIOMAPPING1_DIO3_00 );
+                // DIO3=CADDone
+                SX1276Write( REG_DIOMAPPING1, ( SX1276Read( REG_DIOMAPPING1 ) & RFLR_DIOMAPPING1_DIO3_MASK ) | RFLR_DIOMAPPING1_DIO3_00 );
 
-            SX1276.Settings.State = RF_CAD;
-            SX1276SetOpMode( RFLR_OPMODE_CAD );
-        }
-        break;
-    default:
-        break;
+                SX1276.Settings.State = RF_CAD;
+                SX1276SetOpMode( RFLR_OPMODE_CAD );
+            }
+            break;
+        default:
+            break;
     }
 }
 
@@ -1173,22 +1165,19 @@ int16_t SX1276ReadRssi( RadioModems_t modem )
 
     switch( modem )
     {
-    case MODEM_FSK:
-        rssi = -( SX1276Read( REG_RSSIVALUE ) >> 1 );
-        break;
-    case MODEM_LORA:
-        if( SX1276.Settings.Channel > RF_MID_BAND_THRESH )
-        {
-            rssi = RSSI_OFFSET_HF + SX1276Read( REG_LR_RSSIVALUE );
-        }
-        else
-        {
-            rssi = RSSI_OFFSET_LF + SX1276Read( REG_LR_RSSIVALUE );
-        }
-        break;
-    default:
-        rssi = -1;
-        break;
+        case MODEM_FSK:
+            rssi = -( SX1276Read( REG_RSSIVALUE ) >> 1 );
+            break;
+        case MODEM_LORA:
+            if( SX1276.Settings.Channel > RF_MID_BAND_THRESH ) {
+                rssi = RSSI_OFFSET_HF + SX1276Read( REG_LR_RSSIVALUE );
+            } else {
+                rssi = RSSI_OFFSET_LF + SX1276Read( REG_LR_RSSIVALUE );
+            }
+            break;
+        default:
+            rssi = -1;
+            break;
     }
     return rssi;
 }
@@ -1200,12 +1189,9 @@ void SX1276Reset( void )
 
 void SX1276SetOpMode( uint8_t opMode )
 {
-    if( opMode == RF_OPMODE_SLEEP )
-    {
+    if( opMode == RF_OPMODE_SLEEP ) {
         SX1276SetAntSwLowPower( true );
-    }
-    else
-    {
+    } else {
         SX1276SetAntSwLowPower( false );
         SX1276SetAntSw( opMode );
     }
@@ -1214,38 +1200,34 @@ void SX1276SetOpMode( uint8_t opMode )
 
 void SX1276SetModem( RadioModems_t modem )
 {
-    if( ( SX1276Read( REG_OPMODE ) & RFLR_OPMODE_LONGRANGEMODE_ON ) != 0 )
-    {
+    if( ( SX1276Read( REG_OPMODE ) & RFLR_OPMODE_LONGRANGEMODE_ON ) != 0 ) {
         SX1276.Settings.Modem = MODEM_LORA;
-    }
-    else
-    {
+    } else {
         SX1276.Settings.Modem = MODEM_FSK;
     }
 
-    if( SX1276.Settings.Modem == modem )
-    {
+    if( SX1276.Settings.Modem == modem ) {
         return;
     }
 
     SX1276.Settings.Modem = modem;
     switch( SX1276.Settings.Modem )
     {
-    default:
-    case MODEM_FSK:
-        SX1276SetSleep( );
-        SX1276Write( REG_OPMODE, ( SX1276Read( REG_OPMODE ) & RFLR_OPMODE_LONGRANGEMODE_MASK ) | RFLR_OPMODE_LONGRANGEMODE_OFF );
+        default:
+        case MODEM_FSK:
+            SX1276SetSleep( );
+            SX1276Write( REG_OPMODE, ( SX1276Read( REG_OPMODE ) & RFLR_OPMODE_LONGRANGEMODE_MASK ) | RFLR_OPMODE_LONGRANGEMODE_OFF );
 
-        SX1276Write( REG_DIOMAPPING1, 0x00 );
-        SX1276Write( REG_DIOMAPPING2, 0x30 ); // DIO5=ModeReady
-        break;
-    case MODEM_LORA:
-        SX1276SetSleep( );
-        SX1276Write( REG_OPMODE, ( SX1276Read( REG_OPMODE ) & RFLR_OPMODE_LONGRANGEMODE_MASK ) | RFLR_OPMODE_LONGRANGEMODE_ON );
+            SX1276Write( REG_DIOMAPPING1, 0x00 );
+            SX1276Write( REG_DIOMAPPING2, 0x30 ); // DIO5=ModeReady
+            break;
+        case MODEM_LORA:
+            SX1276SetSleep( );
+            SX1276Write( REG_OPMODE, ( SX1276Read( REG_OPMODE ) & RFLR_OPMODE_LONGRANGEMODE_MASK ) | RFLR_OPMODE_LONGRANGEMODE_ON );
 
-        SX1276Write( REG_DIOMAPPING1, 0x00 );
-        SX1276Write( REG_DIOMAPPING2, 0x00 );
-        break;
+            SX1276Write( REG_DIOMAPPING1, 0x00 );
+            SX1276Write( REG_DIOMAPPING2, 0x00 );
+            break;
     }
 }
 
@@ -1758,30 +1740,30 @@ void SX1276OnDio3Irq( void )
 {
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        break;
-    case MODEM_LORA:
-        if( ( SX1276Read( REG_LR_IRQFLAGS ) & RFLR_IRQFLAGS_CADDETECTED ) == RFLR_IRQFLAGS_CADDETECTED )
-        {
-            // Clear Irq
-            SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_CADDETECTED | RFLR_IRQFLAGS_CADDONE );
-            if( ( RadioEvents != NULL ) && ( RadioEvents->CadDone != NULL ) )
+        case MODEM_FSK:
+            break;
+        case MODEM_LORA:
+            if( ( SX1276Read( REG_LR_IRQFLAGS ) & RFLR_IRQFLAGS_CADDETECTED ) == RFLR_IRQFLAGS_CADDETECTED )
             {
-                RadioEvents->CadDone( true );
+                // Clear Irq
+                SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_CADDETECTED | RFLR_IRQFLAGS_CADDONE );
+                if( ( RadioEvents != NULL ) && ( RadioEvents->CadDone != NULL ) )
+                {
+                    RadioEvents->CadDone( true );
+                }
             }
-        }
-        else
-        {
-            // Clear Irq
-            SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_CADDONE );
-            if( ( RadioEvents != NULL ) && ( RadioEvents->CadDone != NULL ) )
+            else
             {
-                RadioEvents->CadDone( false );
+                // Clear Irq
+                SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_CADDONE );
+                if( ( RadioEvents != NULL ) && ( RadioEvents->CadDone != NULL ) )
+                {
+                    RadioEvents->CadDone( false );
+                }
             }
-        }
-        break;
-    default:
-        break;
+            break;
+        default:
+            break;
     }
 }
 
@@ -1789,18 +1771,18 @@ void SX1276OnDio4Irq( void )
 {
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        {
-            if( SX1276.Settings.FskPacketHandler.PreambleDetected == false )
+        case MODEM_FSK:
             {
-                SX1276.Settings.FskPacketHandler.PreambleDetected = true;
+                if( SX1276.Settings.FskPacketHandler.PreambleDetected == false )
+                {
+                    SX1276.Settings.FskPacketHandler.PreambleDetected = true;
+                }
             }
-        }
-        break;
-    case MODEM_LORA:
-        break;
-    default:
-        break;
+            break;
+        case MODEM_LORA:
+            break;
+        default:
+            break;
     }
 }
 
@@ -1808,12 +1790,12 @@ void SX1276OnDio5Irq( void )
 {
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        break;
-    case MODEM_LORA:
-        break;
-    default:
-        break;
+        case MODEM_FSK:
+            break;
+        case MODEM_LORA:
+            break;
+        default:
+            break;
     }
 }
 

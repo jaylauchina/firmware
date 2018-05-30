@@ -359,26 +359,28 @@ void LoRaWanClass::setDutyCyclePrescaler(uint16_t dutyCycle)
     LoRaMacSetDutyCycle(dutyCycle);
 }
 
+uint8_t LoRaWanClass::getChannelMaxNb()
+{
+    return LoRaMacGetChannelMaxNb();
+}
+
 void LoRaWanClass::setChannelFreq(uint8_t channel, uint32_t freq)
 {
-    if((channel > 15) || (freq > 525000000) || (freq < 137000000)) {
+    if((freq > 525000000) || (freq < 137000000)) {
         return;
     }
     ChannelParams_t   channelParams = {freq, 0, { ( ( DR_5 << 4 ) | DR_0 ) }, 0};
-    LoRaMacChannelAdd(channel,channelParams);
+    LoRaMacChannelAdd(channel, channelParams);
 }
 
 uint32_t LoRaWanClass::getChannelFreq(uint8_t channel)
 {
-    if(channel > 15) {
-        return;
-    }
     return LoRaMacGetChannelFreq(channel);
 }
 
 void LoRaWanClass::setChannelDRRange(uint8_t channel, uint8_t minDR, uint8_t maxDR)
 {
-    if(channel > 15 || maxDR > DR_5) {
+    if(maxDR > DR_5) {
         return;
     }
     if(minDR > maxDR) {
@@ -386,69 +388,23 @@ void LoRaWanClass::setChannelDRRange(uint8_t channel, uint8_t minDR, uint8_t max
     }
     uint32_t tmpFreq = LoRaMacGetChannelFreq(channel);
     ChannelParams_t channelParams = {tmpFreq, 0, { ( ( maxDR << 4 ) | minDR ) }, 0};
-    LoRaMacChannelAdd(channel,channelParams);
+    LoRaMacChannelAdd(channel, channelParams);
 }
 
 bool LoRaWanClass::getChannelDRRange(uint8_t channel, uint8_t *minDR,uint8_t *maxDR)
 {
-    if(channel > 15) {
-        return false;
-    } else {
-        LoRaMacGetChannelDRRange(channel,minDR,maxDR);
-        return true;
-    }
+    LoRaMacGetChannelDRRange(channel, minDR, maxDR);
+    return true;
 }
 
 void LoRaWanClass::setChannelStatus(uint8_t channel, bool enable)
 {
-    if(channel > 15) {
-        return;
-    }
-
-    MibRequestConfirm_t mibReq;
-    uint16_t channelMask = 0;
-    mibReq.Type = MIB_CHANNELS_MASK;
-    if(LoRaMacMibGetRequestConfirm( &mibReq ) != LORAMAC_STATUS_OK) {
-        WLORAWAN_DEBUG("get channelMask fail\r\n");
-        return;
-    }
-
-    channelMask = *mibReq.Param.ChannelsMask;
-    WLORAWAN_DEBUG("channelMask1=%d\r\n",channelMask);
-    if(enable) {
-        channelMask = channelMask | (1<<channel);
-    } else {
-        channelMask = channelMask & (~(1<<channel));
-    }
-
-    WLORAWAN_DEBUG("channelMask2=%d\r\n",channelMask);
-    mibReq.Type = MIB_CHANNELS_DEFAULT_MASK;
-    mibReq.Param.ChannelsDefaultMask = &channelMask;
-    LoRaMacMibSetRequestConfirm( &mibReq );
-
-    mibReq.Type = MIB_CHANNELS_MASK;
-    mibReq.Param.ChannelsMask = &channelMask;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    LoRaMacSetChannelStatus(channel, enable);
 }
 
 bool LoRaWanClass::getChannelStatus(uint8_t channel)
 {
-    if(channel > 15) {
-        return;
-    }
-
-    MibRequestConfirm_t mibReq;
-    uint16_t channelMask = 0;
-    mibReq.Type = MIB_CHANNELS_MASK;
-    if(LoRaMacMibGetRequestConfirm( &mibReq ) != LORAMAC_STATUS_OK) {
-        return;
-    }
-    channelMask = *mibReq.Param.ChannelsMask;
-    if(channelMask & (1<<channel)) {
-        return true;
-    } else {
-        return false;
-    }
+    return LoRaMacGetChannelStatus(channel);
 }
 
 void LoRaWanClass::setConfirmedNbTrials(uint8_t trials)

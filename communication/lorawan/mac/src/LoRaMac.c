@@ -3429,6 +3429,21 @@ void LoRaMacAbortRun(void)
     LORAMAC_DEBUG("loramac abort run!!!\r\n");
 }
 
+bool LoRaMacSetChannelStatus(uint8_t id, bool enable)
+{
+    return RegionSetChannelStatus(LoRaMacRegion, id, enable);
+}
+
+bool LoRaMacGetChannelStatus(uint8_t id)
+{
+    return RegionGetChannelStatus(LoRaMacRegion, id);
+}
+
+uint8_t LoRaMacGetChannelMaxNb(void)
+{
+    return RegionGetChannelMaxNb(LoRaMacRegion);
+}
+
 uint32_t LoRaMacGetChannelFreq(uint8_t id)
 {
     return RegionGetChannelFreq(LoRaMacRegion, id);

@@ -1968,6 +1968,9 @@ LoRaMacStatus_t LoRaMacMcpsRequest( McpsReq_t *mcpsRequest );
 extern LoRaMacParams_t LoRaMacParams;
 //中止运行
 void LoRaMacAbortRun(void);
+bool LoRaMacSetChannelStatus(uint8_t id, bool enable);
+bool LoRaMacGetChannelStatus(uint8_t id);
+uint8_t LoRaMacGetChannelMaxNb(void);
 //获取通道频率
 uint32_t LoRaMacGetChannelFreq(uint8_t id);
 //获取通道频率
