@@ -1386,7 +1386,7 @@ static void OnMacStateCheckTimerEvent( void )
             }
             else
             {
-                RegionInitDefaults( LoRaMacRegion, INIT_TYPE_RESTORE );
+                //RegionInitDefaults( LoRaMacRegion, INIT_TYPE_RESTORE );
 
                 LoRaMacState &= ~LORAMAC_TX_RUNNING;
 

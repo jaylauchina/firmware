@@ -601,6 +601,7 @@ uint8_t RegionCN470LinkAdrReq( LinkAdrReqParams_t* linkAdrReq, int8_t* drOut, in
 
         if( linkAdrParams.ChMaskCtrl == 6 )
         {
+            REGION_CN470_DEBUG("linkAdrParams.ChMaskCtrl == 6----->\r\n");
             // Enable all 125 kHz channels
             channelsMask[0] = 0xFFFF;
             channelsMask[1] = 0xFFFF;
@@ -800,11 +801,12 @@ bool RegionCN470NextChannel( NextChanParams_t* nextChanParams, uint8_t* channel,
     {
         // We found a valid channel
         *channel = enabledChannels[randr( 0, nbEnabledChannels - 1 )];
-        //lz-modify add
+        REGION_CN470_DEBUG("nbEnabledChannels = %d, channel = %d\r\n", nbEnabledChannels, *channel);
         if(!UseLoRaWanStandardProtocol())
         {
             REGION_CN470_DEBUG("region cn470 select datarate\r\n");
             LoRaMacParams.ChannelsDatarate = randr( Channels[*channel].DrRange.Fields.Min, Channels[*channel].DrRange.Fields.Max );
+            REGION_CN470_DEBUG("LoRaMacParams.ChannelsDatarate  = %d\r\n", LoRaMacParams.ChannelsDatarate );
         }
         //======
 

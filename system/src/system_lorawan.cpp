@@ -244,6 +244,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
         case MLME_JOIN:
             {
                 if( mlmeConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK ) {
+#if 0
                     // Status is OK, node has joined the network
                     if(!System.featureEnabled(SYSTEM_FEATURE_STANDARD_LORAWAN_ENABLED)) {
                         uint16_t channelMask = 0;
@@ -260,7 +261,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
                         LoRaMacMibSetRequestConfirm( &mibReq );
                         SLORAWAN_DEBUG("lorawan close other channel\r\n");
                     }
-
+#endif
                     LoRaWanOnEvent(LORAWAN_EVENT_JOINED);
                 } else {
                     // Join was not successful. Try to join again
