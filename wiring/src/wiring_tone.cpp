@@ -21,14 +21,14 @@
 #include "wiring_tone.h"
 #include "tone_hal.h"
 
-void tone(uint8_t pin, uint32_t frequency, uint32_t duration)
+void tone(pin_t pin, uint32_t frequency, uint32_t duration)
 {
     if (pinAvailable(pin) && HAL_Validate_Pin_Function(pin, PF_TIMER)==PF_TIMER) {
         HAL_Tone_Start(pin, frequency, duration);
     }
 }
 
-void noTone(uint8_t pin)
+void noTone(pin_t pin)
 {
     if (pinAvailable(pin) && HAL_Validate_Pin_Function(pin, PF_TIMER)==PF_TIMER) {
         HAL_Tone_Stop(pin);

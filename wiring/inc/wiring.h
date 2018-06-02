@@ -56,22 +56,22 @@ extern "C" {
 * ADC
 */
 void setADCSampleTime(uint8_t ADC_SampleTime);
-int32_t analogRead(uint16_t pin);
+int32_t analogRead(pin_t pin);
 
 /*
 * GPIO
 */
-void pinMode(uint16_t pin, PinMode mode);
-PinMode getPinMode(uint16_t pin);
-bool pinAvailable(uint16_t pin);
-void digitalWrite(uint16_t pin, uint8_t value);
-int32_t digitalRead(uint16_t pin);
+void pinMode(pin_t pin, PinMode mode);
+PinMode getPinMode(pin_t pin);
+bool pinAvailable(pin_t pin);
+void digitalWrite(pin_t pin, uint8_t value);
+int32_t digitalRead(pin_t pin);
 
 
 long map(long value, long fromStart, long fromEnd, long toStart, long toEnd);
 
-void shiftOut(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, uint8_t val);
-uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder);
+void shiftOut(pin_t dataPin, uint8_t clockPin, uint8_t bitOrder, uint8_t val);
+uint8_t shiftIn(pin_t dataPin, uint8_t clockPin, uint8_t bitOrder);
 
 void serialReadLine(Stream *serialObj, char *dst, int max_len, system_tick_t timeout);
 
@@ -84,8 +84,8 @@ bool timerIsEnd(uint32_t timerID, uint32_t time);
 
 uint32_t pulseIn(pin_t pin, uint16_t value, uint32_t timeout = 1000000L);
 uint32_t pulseInLong(pin_t pin, uint16_t value, uint32_t timeout = 1000000L);
-void analogWrite(uint16_t pin, uint32_t value);
-void analogWrite(uint16_t pin, uint32_t value, uint32_t pwm_frequency);
+void analogWrite(pin_t pin, uint32_t value);
+void analogWrite(pin_t pin, uint32_t value, uint32_t pwm_frequency);
 uint8_t analogWriteResolution(pin_t pin, uint8_t resolution);
 uint8_t analogWriteResolution(pin_t pin);
 uint32_t analogWriteMaxFrequency(pin_t pin);

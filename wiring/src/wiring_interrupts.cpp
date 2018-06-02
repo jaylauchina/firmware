@@ -21,7 +21,7 @@
 
 static wiring_interrupt_handler_t* handlers[TOTAL_PINS];
 
-wiring_interrupt_handler_t* allocate_handler(uint16_t pin, wiring_interrupt_handler_t& fn)
+wiring_interrupt_handler_t* allocate_handler(pin_t pin, wiring_interrupt_handler_t& fn)
 {
     delete handlers[pin];
     return handlers[pin] = new wiring_interrupt_handler_t(fn);
@@ -59,7 +59,7 @@ HAL_InterruptExtraConfiguration* configure_interrupt(HAL_InterruptExtraConfigura
 	return nullptr;
 }
 
-bool attachInterrupt(uint16_t pin, wiring_interrupt_handler_t fn, InterruptMode mode, int8_t priority, uint8_t subpriority)
+bool attachInterrupt(pin_t pin, wiring_interrupt_handler_t fn, InterruptMode mode, int8_t priority, uint8_t subpriority)
 {
     HAL_Interrupts_Detach(pin);
     wiring_interrupt_handler_t* handler = allocate_handler(pin, fn);
@@ -70,7 +70,7 @@ bool attachInterrupt(uint16_t pin, wiring_interrupt_handler_t fn, InterruptMode 
     return handler!=NULL;
 }
 
-bool attachInterrupt(uint16_t pin, raw_interrupt_handler_t handler, InterruptMode mode, int8_t priority, uint8_t subpriority)
+bool attachInterrupt(pin_t pin, raw_interrupt_handler_t handler, InterruptMode mode, int8_t priority, uint8_t subpriority)
 {
     HAL_Interrupts_Detach(pin);
     HAL_InterruptExtraConfiguration extra = {0};
@@ -86,7 +86,7 @@ bool attachInterrupt(uint16_t pin, raw_interrupt_handler_t handler, InterruptMod
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-void detachInterrupt(uint16_t pin)
+void detachInterrupt(pin_t pin)
 {
     HAL_Interrupts_Detach(pin);
     delete handlers[pin];

@@ -33,7 +33,7 @@
  * @brief Set the mode of the pin to OUTPUT, INPUT, INPUT_PULLUP,
  * or INPUT_PULLDOWN
  */
-void pinMode(uint16_t pin, PinMode setMode)
+void pinMode(pin_t pin, PinMode setMode)
 {
     if(pin >= TOTAL_PINS || setMode == PIN_MODE_NONE )
     {
@@ -61,7 +61,7 @@ void pinMode(uint16_t pin, PinMode setMode)
  * AN_OUTPUT = 7
  * PIN_MODE_NONE = 255
  */
-PinMode getPinMode(uint16_t pin)
+PinMode getPinMode(pin_t pin)
 {
     return HAL_Get_Pin_Mode(pin);
 }
@@ -70,7 +70,7 @@ PinMode getPinMode(uint16_t pin)
  * @brief Perform safety check on desired pin to see if it's already
  * being used.  Return 0 if used, otherwise return 1 if available.
  */
-bool pinAvailable(uint16_t pin) {
+bool pinAvailable(pin_t pin) {
 
     // SPI safety check
 #ifdef configWIRING_SPI_ENABLE
@@ -268,7 +268,7 @@ uint32_t analogWriteMaxFrequency(pin_t pin)
     return HAL_PWM_Get_Max_Frequency(pin);
 }
 
-uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder) {
+uint8_t shiftIn(pin_t dataPin, uint8_t clockPin, uint8_t bitOrder) {
     uint8_t value = 0;
     uint8_t i;
 
@@ -283,7 +283,7 @@ uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder) {
     return value;
 }
 
-void shiftOut(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, uint8_t val)
+void shiftOut(pin_t dataPin, uint8_t clockPin, uint8_t bitOrder, uint8_t val)
 {
     uint8_t i;
 
