@@ -66,7 +66,6 @@ static LoRaMacPrimitives_t LoRaMacPrimitives;
 static LoRaMacCallback_t LoRaMacCallbacks;
 static  RadioEvents_t loraRadioEvents;
 
-//======loramac不运行========
 static void OnLoRaRadioTxDone(void)
 {
     LoRa._radioSendStatus = 0;
@@ -118,9 +117,6 @@ static void OnLoRaRadioCadDone(bool channelActivityDetected)
     }
 }
 
-//======loramac不运行 end ========
-
-//loramac运行回调函数
 static void McpsConfirm( McpsConfirm_t *mcpsConfirm )
 {
     if( mcpsConfirm->Status == LORAMAC_EVENT_INFO_STATUS_OK ) {
@@ -216,12 +212,10 @@ static void McpsIndication( McpsIndication_t *mcpsIndication )
     switch( mcpsIndication->McpsIndication ) {
         case MCPS_UNCONFIRMED:
             {
-                // DEBUG("mcpsIndication->MCPS_UNCONFIRMED\r\n");
                 break;
             }
         case MCPS_CONFIRMED:
             {
-                // DEBUG("mcpsIndication->MCPS_CONFIRMED\r\n");
                 LoRaWanOnEvent(LORAWAN_EVENT_MCPSINDICATION_CONFIRMED);
                 break;
             }
@@ -295,8 +289,8 @@ void os_getAppEui(uint8_t *buf)
     char temp[24] = {0};
     HAL_PARAMS_Get_System_appeui(appeui, sizeof(appeui));
     system_get_product_id(temp, sizeof(temp));
-    if( (strcmp(temp, appeui) != 0) && ( strlen(temp) != 0) ) //lora产品将product_id当做appeui
-    {
+    //lora产品将product_id当做appeui
+    if((strcmp(temp, appeui) != 0) && ( strlen(temp) != 0)) {
         strncpy(appeui,temp,strlen(temp));
         HAL_PARAMS_Set_System_appeui(appeui);
         SLORAWAN_DEBUG("lorawan set appeui\r\n");
@@ -410,7 +404,7 @@ void LoRaWanJoinOTAA(void)
     mlmeReq.Req.Join.DevEui = LoRaWan.macParams.devEui;
     mlmeReq.Req.Join.AppEui = LoRaWan.macParams.appEui;
     mlmeReq.Req.Join.AppKey = LoRaWan.macParams.appKey;
-    mlmeReq.Req.Join.NbTrials = LoRaWan._joinNbTrials;
+    //mlmeReq.Req.Join.NbTrials = LoRaWan._joinNbTrials;
 
     LoRaMacMlmeRequest( &mlmeReq );
 }
