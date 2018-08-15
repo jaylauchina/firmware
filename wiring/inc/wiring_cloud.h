@@ -33,7 +33,7 @@
 #include "interrupts_hal.h"
 #include "string_convert.h"
 #include <functional>
-#include "service_debug.h"
+#include "molmc_log.h"
 
 class CloudDatepointClass {
     public:

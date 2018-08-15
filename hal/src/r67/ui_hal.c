@@ -33,7 +33,7 @@ void HAL_UI_Initial(void)
 
 uint8_t HAL_UI_Mode_BUTTON_GetState(Button_TypeDef Button)
 {
-    return 0;
+    return 1;
 }
 
 uint32_t HAL_UI_Mode_Button_Pressed(void)
@@ -63,10 +63,7 @@ void HAL_UI_RGB_Breath(uint32_t color, uint16_t period)
 {
 }
 
-void HAL_UI_UserLED_Control(uint8_t value)
-{
-}
-
 void HAL_UI_SysTick_Handler(void)
 {
 }
+

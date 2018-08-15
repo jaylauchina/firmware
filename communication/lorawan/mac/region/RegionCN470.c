@@ -32,18 +32,9 @@
 
 #include "RegionCommon.h"
 #include "RegionCN470.h"
-#include "service_debug.h"
+#include "molmc_log.h"
 
-#define REGION_CN470_DEBUG
-#ifdef  REGION_CN470_DEBUG
-#define REGION_CN470_DEBUG(...)  do {DEBUG(__VA_ARGS__);}while(0)
-#define REGION_CN470_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
-#define REGION_CN470_DEBUG_DUMP DEBUG_DUMP
-#else
-#define REGION_CN470_DEBUG(...)
-#define REGION_CN470_DEBUG_D(...)
-#define REGION_CN470_DEBUG_DUMP
-#endif
+const static char *TAG = "communication-lorawan";
 
 
 // Definitions

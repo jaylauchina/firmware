@@ -32,21 +32,10 @@
 #include "LoRaMac.h"
 #include "LoRaMacCrypto.h"
 #include "LoRaMacTest.h"
-#include "service_debug.h"
+#include "molmc_log.h"
 #include "sx1276-board.h"
 
-/*debug switch*/
-#define LORAWAN_MAC_DEBUG
-
-#ifdef LORAWAN_MAC_DEBUG
-#define LORAMAC_DEBUG(...)  do {DEBUG(__VA_ARGS__);}while(0)
-#define LORAMAC_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
-#define LORAMAC_DEBUG_DUMP DEBUG_DUMP
-#else
-#define LORAMAC_DEBUG(...)
-#define LORAMAC_DEBUG_D(...)
-#define LORAMAC_DEBUG_DUMP
-#endif
+const static char *TAG = "communication-lorawan";
 
 /*!
  * Maximum PHY layer payload size
@@ -3460,7 +3449,6 @@ void LoRaMacAbortRun(void)
     TimerStop( &AckTimeoutTimer);
     LoRaMacFlags.Value = 0;
     LoRaMacState = LORAMAC_IDLE;
-    LORAMAC_DEBUG("loramac abort run!!!\r\n");
 }
 
 uint32_t LoRaMacGetChannelFreq(uint8_t id)

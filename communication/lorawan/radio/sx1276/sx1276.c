@@ -29,7 +29,7 @@
 #include "radio.h"
 #include "sx1276.h"
 #include "sx1276-board.h"
-#include "service_debug.h"
+#include "molmc_log.h"
 
 /*
  * Local types definition

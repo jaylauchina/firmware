@@ -56,9 +56,6 @@
 #include <stdbool.h>
 #include "timer.h"
 
-#define REGION_CN470
-#define REGION_EU433
-
 
 /*!
  * Macro to compute bit of a channel index.

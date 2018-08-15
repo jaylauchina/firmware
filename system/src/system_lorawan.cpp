@@ -36,18 +36,7 @@
 #include "wiring_system.h"
 #include "wiring_interrupts.h"
 
-/*debug switch*/
-#define SYSTEM_LORAWAN_DEBUG
-
-#ifdef SYSTEM_LORAWAN_DEBUG
-#define SLORAWAN_DEBUG(...)    do {DEBUG(__VA_ARGS__);}while(0)
-#define SLORAWAN_DEBUG_D(...)  do {DEBUG_D(__VA_ARGS__);}while(0)
-#define SLORAWAN_DEBUG_DUMP    DEBUG_DUMP
-#else
-#define SLORAWAN_DEBUG(...)
-#define SLORAWAN_DEBUG_D(...)
-#define SLORAWAN_DEBUG_DUMP
-#endif
+const static char *TAG = "system-lorawan";
 
 using namespace intorobot;
 
@@ -252,7 +241,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
                     mibReq.Type = MIB_CHANNELS_MASK;
                     mibReq.Param.ChannelsMask = &channelMask;
                     LoRaMacMibSetRequestConfirm( &mibReq );
-                    SLORAWAN_DEBUG("lorawan close other channel\r\n");
+                    MOLMC_LOGD(TAG, "lorawan close other channel\r\n");
                     #endif
                     LoRaWanOnEvent(LORAWAN_EVENT_JOINED);
                 } else {
@@ -293,7 +282,7 @@ void os_getAppEui(uint8_t *buf)
     if((strcmp(temp, appeui) != 0) && ( strlen(temp) != 0)) {
         strncpy(appeui,temp,strlen(temp));
         HAL_PARAMS_Set_System_appeui(appeui);
-        SLORAWAN_DEBUG("lorawan set appeui\r\n");
+        MOLMC_LOGD(TAG, "lorawan set appeui\r\n");
     }
     string2hex(appeui, buf, 8, true);
 }
@@ -354,10 +343,10 @@ void LoRaWanPause(void)
     interrupts();
     Radio.SetModem( MODEM_LORA );
 
-    DEBUG("lora radio init!!!\r\n");
-    DEBUG("sync word = 0x%x\r\n",SX1276Read(0x39));
-    DEBUG("sx1278 version = 0x%x\r\n", SX1276GetVersion());
-    DEBUG("sx1278 freq = %d\r\n",SX1276LoRaGetRFFrequency());
+    MOLMC_LOGD(TAG, "lora radio init!!!\r\n");
+    MOLMC_LOGD(TAG, "sync word = 0x%x\r\n", SX1276Read(0x39));
+    MOLMC_LOGD(TAG, "sx1278 version = 0x%x\r\n", SX1276GetVersion());
+    MOLMC_LOGD(TAG, "sx1278 freq = %d\r\n", SX1276LoRaGetRFFrequency());
 }
 
 void LoRaWanResume(void)
@@ -371,10 +360,10 @@ void LoRaWanResume(void)
     //LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU433);
     LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_CN470);
 
-    DEBUG("loramac init!!!\r\n");
-    DEBUG("sync word = 0x%x\r\n",SX1276Read(0x39));
-    DEBUG("sx1278 version = 0x%x\r\n", SX1276GetVersion());
-    DEBUG("sx1278 freq = %d\r\n",SX1276LoRaGetRFFrequency());
+    MOLMC_LOGD(TAG, "loramac init!!!\r\n");
+    MOLMC_LOGD(TAG, "sync word = 0x%x\r\n", SX1276Read(0x39));
+    MOLMC_LOGD(TAG, "sx1278 version = 0x%x\r\n", SX1276GetVersion());
+    MOLMC_LOGD(TAG, "sx1278 freq = %d\r\n", SX1276LoRaGetRFFrequency());
 
     MibRequestConfirm_t mibReq;
 
@@ -423,11 +412,11 @@ bool LoRaWanJoinABP(void)
     string2hex(appskey, LoRaWan.macParams.appSkey, 16, false);
 
 #if 0
-    SLORAWAN_DEBUG("devAddr: 0x%x\r\n", LoRaWan.macParams.devAddr);
-    SLORAWAN_DEBUG("nwkSkey:");
-    SLORAWAN_DEBUG_DUMP(LoRaWan.macParams.nwkSkey, 16);
-    SLORAWAN_DEBUG("appSkey:");
-    SLORAWAN_DEBUG_DUMP(LoRaWan.macParams.appSkey, 16);
+    MOLMC_LOGD(TAG, "devAddr: 0x%x\r\n", LoRaWan.macParams.devAddr);
+    MOLMC_LOGD(TAG, "nwkSkey:");
+    MOLMC_LOG_BUFFER_HEX(TAG, LoRaWan.macParams.nwkSkey, 16);
+    MOLMC_LOGD(TAG, "appSkey:");
+    MOLMC_LOG_BUFFER_HEX(TAG, LoRaWan.macParams.appSkey, 16);
 #endif
 
     mibReq.Type = MIB_NET_ID;
@@ -491,7 +480,7 @@ void LoRaWanRespondServerConfirmedFrame(void)
     mcpsReq.Req.Unconfirmed.Datarate = LoRaWan.getDataRate();
 
     if( LoRaMacMcpsRequest( &mcpsReq ) == LORAMAC_STATUS_OK ) {
-        SLORAWAN_DEBUG("LoRaWan send empty frame status OK!!!\r\n");
+        MOLMC_LOGD(TAG, "LoRaWan send empty frame status OK!!!\r\n");
     }
 }
 
@@ -539,9 +528,9 @@ void LoRaWanOnEvent(lorawan_event_t event)
                 HAL_PARAMS_Set_System_at_mode(AT_MODE_FLAG_OTAA_ACTIVE);
                 HAL_PARAMS_Save_Params();
 
-                SLORAWAN_DEBUG("devaddr: %s\r\n", devaddr);
-                SLORAWAN_DEBUG("nwkskey: %s\r\n", nwkskey);
-                SLORAWAN_DEBUG("appskey: %s\r\n", appskey);
+                MOLMC_LOGD(TAG, "devaddr: %s\r\n", devaddr);
+                MOLMC_LOGD(TAG, "nwkskey: %s\r\n", nwkskey);
+                MOLMC_LOGD(TAG, "appskey: %s\r\n", appskey);
                 INTOROBOT_LORAWAN_JOINED = true;
                 INTOROBOT_LORAWAN_CONNECTED = true;
 
@@ -549,7 +538,7 @@ void LoRaWanOnEvent(lorawan_event_t event)
                 system_notify_event(event_lorawan_status,ep_lorawan_join_success);
 
                 system_rgb_blink(RGB_COLOR_WHITE, 2000); //白灯闪烁
-                SLORAWAN_DEBUG("--LoRaWanOnEvent joined--\r\n");
+                MOLMC_LOGD(TAG, "--LoRaWanOnEvent joined--\r\n");
             }
             break;
 
@@ -559,14 +548,14 @@ void LoRaWanOnEvent(lorawan_event_t event)
             LoRaWan._macRunStatus = ep_lorawan_join_fail;
             system_notify_event(event_lorawan_status,ep_lorawan_join_fail);
 
-            SLORAWAN_DEBUG("--LoRaWanOnEvent join failed--\r\n");
+            MOLMC_LOGD(TAG, "--LoRaWanOnEvent join failed--\r\n");
             break;
 
         case LORAWAN_EVENT_RX_COMPLETE:
             break;
 
         case LORAWAN_EVENT_MCPSINDICATION_CONFIRMED:
-            SLORAWAN_DEBUG("LoRaWanOnEvent Respond Server ACK\r\n");
+            MOLMC_LOGD(TAG, "LoRaWanOnEvent Respond Server ACK\r\n");
             if(LoRaWan.getMacClassType() == CLASS_C) {
                 INTOROBOT_LORAWAN_RESP_SERVER_ACK = true;
                 LoRaWanRespondServerConfirmedFrame();
