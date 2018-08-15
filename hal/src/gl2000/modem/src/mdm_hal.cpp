@@ -879,7 +879,7 @@ int MDMParser::socketCreate(IpProtocol ipproto, int port)
     // find an free socket
     socket = _findSocket(MDM_SOCKET_ERROR);
     if (socket != MDM_SOCKET_ERROR) {
-        //MOLMC_LOGD(TAG, "Socket %d: handle %d was created", socket, socket);
+        //MOLMC_LOGD(TAG, "Socket %d: handle %d was created\r\n", socket, socket);
         _sockets[socket].handle     = socket;
         _sockets[socket].ipproto    = ipproto;
         _sockets[socket].localip    = port;
@@ -888,7 +888,7 @@ int MDMParser::socketCreate(IpProtocol ipproto, int port)
         _sockets[socket].open       = true;
         _sockets[socket].pipe = new Pipe<char>(MAX_SIZE);
     }
-    //MOLMC_LOGD(TAG, "socketCreate(%s)", (ipproto?"UDP":"TCP"));
+    //MOLMC_LOGD(TAG, "socketCreate(%s)\r\n", (ipproto?"UDP":"TCP"));
     return socket;
 }
 
@@ -897,7 +897,7 @@ bool MDMParser::socketConnect(int socket, const char * host, int port)
     bool ok = false;
     LOCK();
     if (ISSOCKET(socket) && (!_sockets[socket].connected)) {
-        //MOLMC_LOGD(TAG, "socketConnect(%d,port:%d)", socket,port);
+        //MOLMC_LOGD(TAG, "socketConnect(%d,port:%d)\r\n", socket,port);
         if(_sockets[socket].ipproto)
             sendFormated("AT+CIPSTART=%d,\"%s\",\"%s\",%d,%d,%d\r\n", _sockets[socket].handle, "UDP", host, port, _sockets[socket].localip, 2);
         else
@@ -914,7 +914,7 @@ bool MDMParser::socketConnect(int socket, const MDM_IP& ip, int port)
     bool ok = false;
     LOCK();
     if (ISSOCKET(socket) && (!_sockets[socket].connected)) {
-        //MOLMC_LOGD(TAG, "socketConnect(%d,port:%d)", socket,port);
+        //MOLMC_LOGD(TAG, "socketConnect(%d,port:%d)\r\n", socket,port);
         if(_sockets[socket].ipproto)
             sendFormated("AT+CIPSTART=%d,\"%s\",\"" IPSTR "\",%d,%d,%d\r\n", _sockets[socket].handle, "UDP", IPNUM(ip), port, _sockets[socket].localip, 2);
         else
@@ -931,7 +931,7 @@ bool MDMParser::socketIsConnected(int socket)
     bool ok = false;
     LOCK();
     ok = ISSOCKET(socket) && _sockets[socket].connected;
-    //MOLMC_LOGD(TAG, "socketIsConnected(%d) %s", socket, ok?"yes":"no");
+    //MOLMC_LOGD(TAG, "socketIsConnected(%d) %s\r\n", socket, ok?"yes":"no");
     UNLOCK();
     return ok;
 }
@@ -943,7 +943,7 @@ bool MDMParser::socketClose(int socket)
     if (ISSOCKET(socket)
             && (_sockets[socket].connected || _sockets[socket].open))
     {
-        //MOLMC_LOGD(TAG, "socketClose(%d)", socket);
+        //MOLMC_LOGD(TAG, "socketClose(%d)\r\n", socket);
         sendFormated("AT+CIPCLOSE=%d\r\n", _sockets[socket].handle);
         if (RESP_ERROR == waitFinalResp()) {
         }
@@ -964,7 +964,7 @@ bool MDMParser::_socketFree(int socket)
     LOCK();
     if ((socket >= 0) && (socket < NUMSOCKETS)) {
         if (_sockets[socket].handle != MDM_SOCKET_ERROR) {
-            //MOLMC_LOGD(TAG, "socketFree(%d)",  socket);
+            //MOLMC_LOGD(TAG, "socketFree(%d)\r\n",  socket);
             _sockets[socket].handle     = MDM_SOCKET_ERROR;
             _sockets[socket].localip    = 0;
             _sockets[socket].connected  = false;
@@ -988,7 +988,7 @@ bool MDMParser::socketFree(int socket)
 
 int MDMParser::socketSend(int socket, const char * buf, int len)
 {
-    //MOLMC_LOGD(TAG, "socketSend(%d,%d)", socket,len);
+    //MOLMC_LOGD(TAG, "socketSend(%d,%d)\r\n", socket,len);
     int cnt = len;
     while (cnt > 0) {
         int blk = USO_MAX_WRITE;
@@ -1019,7 +1019,7 @@ int MDMParser::socketSend(int socket, const char * buf, int len)
 
 int MDMParser::socketSendTo(int socket, MDM_IP ip, int port, const char * buf, int len)
 {
-    //MOLMC_LOGD(TAG, "socketSendTo(%d," IPSTR ",%d,,%d)", socket,IPNUM(ip),port,len);
+    //MOLMC_LOGD(TAG, "socketSendTo(%d," IPSTR ",%d,,%d)\r\n", socket,IPNUM(ip),port,len);
     int cnt = len;
     while (cnt > 0) {
         int blk = USO_MAX_WRITE;
@@ -1063,7 +1063,7 @@ int MDMParser::socketReadable(int socket)
     //因为数据已经下发到本地 所以连接断开也可以获取剩余数据  2016-01-12 chenkaiyao
     /*
     if (ISSOCKET(socket) && _sockets[socket].connected) {
-        //MOLMC_LOGD(TAG, "socketReadable(%d)", socket);
+        //MOLMC_LOGD(TAG, "socketReadable(%d)\r\n", socket);
         // allow to receive unsolicited commands
         if (_sockets[socket].connected)
             pending = _sockets[socket].pending;
@@ -1285,7 +1285,7 @@ bool MDMParser::setDebug(int level)
 void MDMParser::dumpIp(MDM_IP ip)
 {
     if (ip != NOIP) {
-        MOLMC_LOGD(TAG, "\r\n[ Modem:IP " IPSTR " ] = = = = = = = = = = = = = =", IPNUM(ip));
+        MOLMC_LOGD(TAG, "\r\n[ Modem:IP " IPSTR " ] = = = = = = = = = = = = = =\r\n", IPNUM(ip));
     }
 }
 

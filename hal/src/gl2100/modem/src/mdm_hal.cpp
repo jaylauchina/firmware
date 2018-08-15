@@ -220,8 +220,12 @@ int MDMParser::send(const char* buf, int len)
 {
 #ifdef MDM_DEBUG
     if (_debugLevel >= 3) {
-        MOLMC_LOGD(TAG, "%10.3f AT send    ", (HAL_Timer_Get_Milli_Seconds()-_debugTime)*0.001);
-        dumpAtCmd(buf,len);
+        char *temp = malloc(calcAtCmdLen(buf, len) + 8);
+        if(NULL != temp) {
+            dumpAtCmd(buf, len, temp);
+            MOLMC_LOGD(TAG, "[%010u]:AT send \" %s \"\r\n", HAL_Timer_Get_Milli_Seconds()-_debugTime, temp);
+            free(temp);
+        }
     }
 #endif
     return _send(buf, len);
@@ -261,8 +265,12 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                             (type == TYPE_PLUS)   ? CYA " + " DEF :
                             (type == TYPE_PROMPT) ? BLU " > " DEF :
                                                         "..." ;
-            MOLMC_LOGD(TAG, "%10.3f AT read %s", (HAL_Timer_Get_Milli_Seconds()-_debugTime)*0.001, s);
-            dumpAtCmd(buf, len);
+            char *temp = malloc(calcAtCmdLen(buf, len) + 8);
+            if(NULL != temp) {
+                dumpAtCmd(buf, len, temp);
+                MOLMC_LOGD(TAG, "[%010u]:AT read %s \" %s \"\r\n", HAL_Timer_Get_Milli_Seconds()-_debugTime, s, temp);
+                free(temp);
+            }
             (void)s;
         }
 #endif
@@ -1505,11 +1513,11 @@ int MDMParser::socketCreate(IpProtocol ipproto, int port)
     }
 
     if (_attached) {
-        //MOLMC_LOGD(TAG, "socketCreate(%s)", (ipproto?"UDP":"TCP"));
+        //MOLMC_LOGD(TAG, "socketCreate(%s)\r\n", (ipproto?"UDP":"TCP"));
         // find an free socket
         socket = _findSocket(MDM_SOCKET_ERROR);
         if (socket != MDM_SOCKET_ERROR) {
-            //MOLMC_LOGD(TAG, "Socket %d: handle %d was created", socket, socket);
+            //MOLMC_LOGD(TAG, "Socket %d: handle %d was created\r\n", socket, socket);
             _sockets[socket].handle     = socket;
             _sockets[socket].ipproto    = ipproto;
             _sockets[socket].localip    = port;
@@ -1529,7 +1537,7 @@ int MDMParser::socketCreate(IpProtocol ipproto, int port)
             waitFinalResp();
             */
         }
-        //MOLMC_LOGD(TAG, "socketCreate(%s)", (ipproto?"UDP":"TCP"));
+        //MOLMC_LOGD(TAG, "socketCreate(%s)\r\n", (ipproto?"UDP":"TCP"));
     }
     UNLOCK();
     return socket;
@@ -1550,7 +1558,7 @@ bool MDMParser::socketConnect(int socket, const MDM_IP& ip, int port)
     bool ok = false;
     LOCK();
     if (ISSOCKET(socket) && (!_sockets[socket].connected)) {
-        //MOLMC_LOGD(TAG, "socketConnect(%d,port:%d)", socket,port);
+        //MOLMC_LOGD(TAG, "socketConnect(%d,port:%d)\r\n", socket,port);
         if(_sockets[socket].ipproto)
             sendFormated("AT+CIPSTART=%d,\"%s\",\"" IPSTR "\",\"%d\"\r\n", _sockets[socket].handle, "UDP", IPNUM(ip), port);
         else
@@ -1584,7 +1592,7 @@ bool MDMParser::socketClose(int socket)
     if (ISSOCKET(socket)
             && (_sockets[socket].connected || _sockets[socket].open))
     {
-        //MOLMC_LOGD(TAG, "socketClose(%d)", socket);
+        //MOLMC_LOGD(TAG, "socketClose(%d)\r\n", socket);
         sendFormated("AT+CIPCLOSE=%d,1\r\n", _sockets[socket].handle);
         if (RESP_ERROR == waitFinalResp()) {
         }
@@ -1605,7 +1613,7 @@ bool MDMParser::_socketFree(int socket)
     LOCK();
     if ((socket >= 0) && (socket < NUMSOCKETS)) {
         if (_sockets[socket].handle != MDM_SOCKET_ERROR) {
-            //MOLMC_LOGD(TAG, "socketFree(%d)",  socket);
+            //MOLMC_LOGD(TAG, "socketFree(%d)\r\n",  socket);
             _sockets[socket].handle     = MDM_SOCKET_ERROR;
             _sockets[socket].localip    = 0;
             _sockets[socket].connected  = false;
@@ -1629,7 +1637,7 @@ bool MDMParser::socketFree(int socket)
 
 int MDMParser::socketSend(int socket, const char * buf, int len)
 {
-    //MOLMC_LOGD(TAG, "socketSend(%d,%d)", socket,len);
+    //MOLMC_LOGD(TAG, "socketSend(%d,%d)\r\n", socket,len);
     int cnt = len;
     while (cnt > 0) {
         int blk = USO_MAX_WRITE;
@@ -1659,7 +1667,7 @@ int MDMParser::socketSend(int socket, const char * buf, int len)
 
 int MDMParser::socketSendTo(int socket, MDM_IP ip, int port, const char * buf, int len)
 {
-    //MOLMC_LOGD(TAG, "socketSendTo(%d," IPSTR ",%d,%d)", socket,IPNUM(ip),port,len);
+    //MOLMC_LOGD(TAG, "socketSendTo(%d," IPSTR ",%d,%d)\r\n", socket,IPNUM(ip),port,len);
     int cnt = len;
     while (cnt > 0) {
         int blk = USO_MAX_WRITE;

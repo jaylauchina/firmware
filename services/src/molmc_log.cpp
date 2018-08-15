@@ -27,7 +27,7 @@
 #include "utils_queue.h"
 #include "molmc_log.h"
 #include "wiring_ticks.h"
-//#include "molmc_log.h"
+#include "wiring_usartserial.h"
 
 #if PLATFORM_THREADING
 #include "concurrent_hal.h"
@@ -56,12 +56,14 @@ typedef struct uncached_tag_entry_{
     char tag[0];    // beginning of a zero-terminated string
 } uncached_tag_entry_t;
 
+static void log_output(const char* msg);
+
 static molmc_log_level_t s_log_default_level = MOLMC_LOG_NONE;
 static SLIST_HEAD(log_tags_head , uncached_tag_entry_) s_log_tags = SLIST_HEAD_INITIALIZER(s_log_tags);
 static cached_tag_entry_t s_log_cache[TAG_CACHE_SIZE];
 static uint32_t s_log_cache_max_generation = 0;
 static uint32_t s_log_cache_entry_count = 0;
-static log_output_fn_t s_log_print_func = NULL;
+static log_output_fn_t s_log_print_func = &log_output;
 
 #ifdef LOG_BUILTIN_CHECKS
 static uint32_t s_log_cache_misses = 0;
@@ -112,6 +114,15 @@ void init_debug_mutex(void)
 #define UNLOCK()
 
 #endif
+
+static void log_output(const char* msg)
+{
+    if(!Serial.isEnabled()) {
+        Serial.begin(115200);
+    } else {
+        Serial.print(msg);
+    }
+}
 
 log_output_fn_t molmc_log_set_output(log_output_fn_t func)
 {
@@ -352,7 +363,7 @@ void molmc_log_buffer_hex_internal(const char *tag, const void *buffer, uint16_t
         for( int i = 0; i < bytes_cur_line; i ++ ) {
             sprintf( hex_buffer + 3*i, "%02x ", (uint8_t)ptr_line[i] );
         }
-        MOLMC_LOG_LEVEL( log_level, tag, "%s", hex_buffer );
+        MOLMC_LOG_LEVEL( log_level, tag, "%s\r\n", hex_buffer );
         ptr_buffer += bytes_cur_line;
         buff_len -= bytes_cur_line;
     } while( buff_len );
@@ -385,7 +396,7 @@ void molmc_log_buffer_char_internal(const char *tag, const void *buffer, uint16_
         for( int i = 0; i < bytes_cur_line; i ++ ) {
             sprintf( char_buffer + i, "%c", ptr_line[i] );
         }
-        MOLMC_LOG_LEVEL( log_level, tag, "%s", char_buffer );
+        MOLMC_LOG_LEVEL( log_level, tag, "%s\r\n", char_buffer );
         ptr_buffer += bytes_cur_line;
         buff_len -= bytes_cur_line;
     } while( buff_len );
@@ -439,7 +450,7 @@ void molmc_log_buffer_hexdump_internal( const char *tag, const void *buffer, uin
         }
         ptr_hd += sprintf( ptr_hd, "|" );
 
-        MOLMC_LOG_LEVEL( log_level, tag, "%s", hd_buffer );
+        MOLMC_LOG_LEVEL( log_level, tag, "%s\r\n", hd_buffer );
         ptr_buffer += bytes_cur_line;
         buff_len -= bytes_cur_line;
     } while( buff_len );

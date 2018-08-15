@@ -649,7 +649,7 @@ static uint16_t intorobotFormAllDatapoint(uint8_t *buffer, uint16_t len, uint8_t
 
 int intorobotSendRawData(uint8_t *data, uint16_t dataLen, bool confirmed, uint16_t timeout)
 {
-    MOLMC_LOGD(TAG, "send data:");
+    MOLMC_LOGD(TAG, "send data:\r\n");
     MOLMC_LOG_BUFFER_HEX(TAG, data, dataLen);
 #ifndef configNO_CLOUD
     bool result = intorobot_publish(TOPIC_VERSION_V2, INTOROBOT_MQTT_RX_TOPIC, data, dataLen, 0, false);

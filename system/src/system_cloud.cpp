@@ -99,7 +99,7 @@ void mqtt_client_callback(char *topic, uint8_t *payload, uint32_t length)
     MOLMC_LOGD(TAG, "mqtt callback!\r\n");
     MOLMC_LOGD(TAG, "topic: %s\r\n", topic);
 
-    //MOLMC_LOGD(TAG, "mqtt receive data:");
+    //MOLMC_LOGD(TAG, "mqtt receive data:\r\n");
     //MOLMC_LOG_BUFFER_HEX(TAG, payload, length);
 
     pdata = (uint8_t *)malloc(datalen+1);
@@ -408,7 +408,7 @@ void cloud_data_receive_callback(uint8_t *payload, uint32_t len)
 {
     MOLMC_LOGD(TAG, "Ok! receive data form cloud!\r\n");
 
-    MOLMC_LOGD(TAG, "OK! Rev datapoint data <%d>: ", len);
+    MOLMC_LOGD(TAG, "OK! Rev datapoint data <%d>: \r\n", len);
     MOLMC_LOG_BUFFER_HEX(TAG, payload, len);
 
     intorobotParseReceiveDatapoints(payload, len);
@@ -912,9 +912,9 @@ int intorobot_cloud_connect(void)
     if(g_mqtt_client.connect(device_id, device_id, payload, fulltopic, 0, true, INTOROBOT_MQTT_WILL_MESSAGE)) {
         MqttConnectComputeSKeys( access_token_hex, random_hex, g_mqtt_nwkskey, g_mqtt_appskey );
         MOLMC_LOGD(TAG, "---------connect success--------\r\n");
-        MOLMC_LOGD(TAG, "appskey -> ");
+        MOLMC_LOGD(TAG, "appskey -> \r\n");
         MOLMC_LOG_BUFFER_HEX(TAG, g_mqtt_appskey, 16);
-        MOLMC_LOGD(TAG, "nwkskey -> ");
+        MOLMC_LOGD(TAG, "nwkskey -> \r\n");
         MOLMC_LOG_BUFFER_HEX(TAG, g_mqtt_nwkskey, 16);
 
         //重新订阅

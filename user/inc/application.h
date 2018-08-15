@@ -39,6 +39,7 @@
 #include "system_utilities.h"
 
 #include "wiring.h"
+#include "wiring_log.h"
 #include "wiring_cloud.h"
 #include "wiring_interrupts.h"
 #include "wiring_string.h"

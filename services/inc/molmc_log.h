@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,12 +154,16 @@ void molmc_log_write(molmc_log_level_t level, const char* tag, const char* forma
  *
  * @param level level of the log
  */
+#if defined(USE_ONLY_PANIC)
+#define MOLMC_LOG_BUFFER_HEXDUMP( tag, buffer, buff_len, level )
+#else
 #define MOLMC_LOG_BUFFER_HEXDUMP( tag, buffer, buff_len, level ) \
     do { \
         if ( MOLMC_LOG_LOCAL_LEVEL >= (level) ) { \
             molmc_log_buffer_hexdump_internal( tag, buffer, buff_len, level); \
         } \
     } while(0)
+#endif
 
 /**
  * @brief Log a buffer of hex bytes at Info level
@@ -172,12 +177,16 @@ void molmc_log_write(molmc_log_level_t level, const char* tag, const char* forma
  * @see ``molmc_log_buffer_hex_level``
  *
  */
+#if defined(USE_ONLY_PANIC)
+#define MOLMC_LOG_BUFFER_HEX(tag, buffer, buff_len)
+#else
 #define MOLMC_LOG_BUFFER_HEX(tag, buffer, buff_len) \
     do { \
         if (MOLMC_LOG_LOCAL_LEVEL > MOLMC_LOG_INFO) { \
             MOLMC_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, MOLMC_LOG_INFO ); \
         }\
     } while(0)
+#endif
 
 /**
  * @brief Log a buffer of characters at Info level. Buffer should contain only printable characters.
@@ -191,12 +200,16 @@ void molmc_log_write(molmc_log_level_t level, const char* tag, const char* forma
  * @see ``molmc_log_buffer_char_level``
  *
  */
+#if defined(USE_ONLY_PANIC)
+#define MOLMC_LOG_BUFFER_CHAR(tag, buffer, buff_len)
+#else
 #define MOLMC_LOG_BUFFER_CHAR(tag, buffer, buff_len) \
     do { \
         if (MOLMC_LOG_LOCAL_LEVEL > MOLMC_LOG_INFO) { \
             MOLMC_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, MOLMC_LOG_INFO ); \
         }\
     } while(0)
+#endif
 
 #if CONFIG_MOLMC_LOG_COLORS
 #define MOLMC_LOG_COLOR_BLACK   "30"
@@ -223,13 +236,21 @@ void molmc_log_write(molmc_log_level_t level, const char* tag, const char* forma
 #define MOLMC_LOG_RESET_COLOR
 #endif //CONFIG_MOLMC_LOG_COLORS
 
-#define MOLMC_LOG_FORMAT(letter, format)  MOLMC_LOG_COLOR_ ## letter #letter " [%010u]:[%-12.12s]: " format MOLMC_LOG_RESET_COLOR "\n"
+#define MOLMC_LOG_FORMAT(letter, format)  MOLMC_LOG_COLOR_ ## letter #letter " [%010u]:[%-20.20s]: " format MOLMC_LOG_RESET_COLOR ""
 
+#if defined(USE_ONLY_PANIC)
+#define MOLMC_LOGE( tag, format, ... )
+#define MOLMC_LOGW( tag, format, ... )
+#define MOLMC_LOGI( tag, format, ... )
+#define MOLMC_LOGD( tag, format, ... )
+#define MOLMC_LOGV( tag, format, ... )
+#else
 #define MOLMC_LOGE( tag, format, ... ) MOLMC_LOG_LEVEL_LOCAL(MOLMC_LOG_ERROR,   tag, format, ##__VA_ARGS__)
 #define MOLMC_LOGW( tag, format, ... ) MOLMC_LOG_LEVEL_LOCAL(MOLMC_LOG_WARN,    tag, format, ##__VA_ARGS__)
 #define MOLMC_LOGI( tag, format, ... ) MOLMC_LOG_LEVEL_LOCAL(MOLMC_LOG_INFO,    tag, format, ##__VA_ARGS__)
 #define MOLMC_LOGD( tag, format, ... ) MOLMC_LOG_LEVEL_LOCAL(MOLMC_LOG_DEBUG,   tag, format, ##__VA_ARGS__)
 #define MOLMC_LOGV( tag, format, ... ) MOLMC_LOG_LEVEL_LOCAL(MOLMC_LOG_VERBOSE, tag, format, ##__VA_ARGS__)
+#endif
 
 /** runtime macro to output logs at a specified level.
  *

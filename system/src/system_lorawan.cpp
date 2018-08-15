@@ -413,9 +413,9 @@ bool LoRaWanJoinABP(void)
 
 #if 0
     MOLMC_LOGD(TAG, "devAddr: 0x%x\r\n", LoRaWan.macParams.devAddr);
-    MOLMC_LOGD(TAG, "nwkSkey:");
+    MOLMC_LOGD(TAG, "nwkSkey:\r\n");
     MOLMC_LOG_BUFFER_HEX(TAG, LoRaWan.macParams.nwkSkey, 16);
-    MOLMC_LOGD(TAG, "appSkey:");
+    MOLMC_LOGD(TAG, "appSkey:\r\n");
     MOLMC_LOG_BUFFER_HEX(TAG, LoRaWan.macParams.appSkey, 16);
 #endif
 
