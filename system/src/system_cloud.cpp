@@ -61,9 +61,9 @@ using namespace intorobot;
 #include "wiring_mqttclient.h"
 #include "mqttcrypto.h"
 
-volatile uint8_t INTOROBOT_CLOUD_SOCKETED = 0;           //网络连接状态 1连接 0断开
+volatile uint8_t INTOROBOT_CLOUD_SOCKETED         = 0;   //网络连接状态 1连接 0断开
 volatile uint8_t INTOROBOT_CLOUD_CONNECT_PREPARED = 0;   //平台链接预处理状态 1已经处理
-volatile uint8_t INTOROBOT_CLOUD_CONNECTED = 0;          //平台连接状态 1连接上了
+volatile uint8_t INTOROBOT_CLOUD_CONNECTED        = 0;   //平台连接状态 1连接上了
 
 uint8_t g_mqtt_appskey[16] = {0};
 uint8_t g_mqtt_nwkskey[16] = {0};

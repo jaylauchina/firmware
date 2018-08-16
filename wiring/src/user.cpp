@@ -156,11 +156,11 @@ static retained volatile uint32_t __backup_sram_signature;
 static bool backup_ram_was_valid_ = false;
 const uint32_t signature = 0x9A271C1E;
 
-bool __backup_ram_was_valid() { return backup_ram_was_valid_; }
+bool __backup_ram_was_valid() {return backup_ram_was_valid_;}
 
 #else
 
-bool __backup_ram_was_valid() { return false; }
+bool __backup_ram_was_valid() {return false;}
 
 #endif
 

@@ -21,7 +21,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
 #include "hw_config.h"
 #include "core_hal.h"
 #include "params_hal.h"
@@ -42,18 +41,18 @@ using namespace intorobot;
 
 #ifndef configNO_LORAWAN
 
-#define LORAWAN_PUBLIC_NETWORK        true
-#define LORAWAN_NETWORK_ID            ( uint32_t )0
+#define LORAWAN_PUBLIC_NETWORK                  true
+#define LORAWAN_NETWORK_ID                      ( uint32_t )0
 
-volatile bool INTOROBOT_LORAWAN_JOINED = false; //lorawan激活通过
-volatile bool INTOROBOT_LORAWAN_CONNECTED = false; //lorawan发送版本信息完毕 已连接平台
-volatile bool INTOROBOT_LORAWAN_JOIN_ENABLE = false; //入网使能 true使能
-volatile bool INTOROBOT_LORAWAN_JOINING = false; //入网中
-volatile bool INTOROBOT_LORAWAN_RESP_SERVER_ACK = false; //c类时回复服务器确认帧
+volatile bool INTOROBOT_LORAWAN_JOINED          = false;   //lorawan激活通过
+volatile bool INTOROBOT_LORAWAN_CONNECTED       = false;   //lorawan发送版本信息完毕 已连接平台
+volatile bool INTOROBOT_LORAWAN_JOIN_ENABLE     = false;   //入网使能 true使能
+volatile bool INTOROBOT_LORAWAN_JOINING         = false;   //入网中
+volatile bool INTOROBOT_LORAWAN_RESP_SERVER_ACK = false;   //c类时回复服务器确认帧
 
 static LoRaMacPrimitives_t LoRaMacPrimitives;
 static LoRaMacCallback_t LoRaMacCallbacks;
-static  RadioEvents_t loraRadioEvents;
+static RadioEvents_t loraRadioEvents;
 
 static void OnLoRaRadioTxDone(void)
 {
@@ -75,7 +74,7 @@ static void OnLoRaRadioRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int
     LoRa._snr = snr;
     LoRa._bufferSize = size;
     LoRa._available = true;
-    if(LoRa._buffer != NULL){
+    if(LoRa._buffer != NULL) {
         free(LoRa._buffer);
         LoRa._buffer = NULL;
     }
@@ -99,7 +98,7 @@ static void OnLoRaRadioRxError(void)
 
 static void OnLoRaRadioCadDone(bool channelActivityDetected)
 {
-    if(channelActivityDetected){
+    if(channelActivityDetected) {
         LoRa._radioRunStatus = ep_lora_radio_cad_detected;
     } else {
         LoRa._radioRunStatus = ep_lora_radio_cad_done;
@@ -226,28 +225,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
     switch( mlmeConfirm->MlmeRequest ) {
         case MLME_JOIN:
             {
-                // Status is OK, node has joined the network
-                if(!System.featureEnabled(SYSTEM_FEATURE_STANDARD_LORAWAN_ENABLED)){
-                    #if 0
-                    uint16_t channelMask = 0;
-                    uint8_t lastChannel = LoRaMacGetLastTxChannel();
-                    channelMask = 1 << lastChannel;
-
-                    MibRequestConfirm_t mibReq;
-                    mibReq.Type = MIB_CHANNELS_DEFAULT_MASK;
-                    mibReq.Param.ChannelsDefaultMask = &channelMask;
-                    LoRaMacMibSetRequestConfirm( &mibReq );
-
-                    mibReq.Type = MIB_CHANNELS_MASK;
-                    mibReq.Param.ChannelsMask = &channelMask;
-                    LoRaMacMibSetRequestConfirm( &mibReq );
-                    MOLMC_LOGD(TAG, "lorawan close other channel\r\n");
-                    #endif
-                    LoRaWanOnEvent(LORAWAN_EVENT_JOINED);
-                } else {
-                    // Join was not successful. Try to join again
-                    LoRaWanOnEvent(LORAWAN_EVENT_JOIN_FAIL);
-                }
+                LoRaWanOnEvent(LORAWAN_EVENT_JOINED);
                 break;
             }
         case MLME_LINK_CHECK:
@@ -268,6 +246,7 @@ static void MlmeConfirm( MlmeConfirm_t *mlmeConfirm )
 void os_getDevEui(uint8_t *buf)
 {
     char deveui[24]={0};
+
     HAL_PARAMS_Get_System_device_id(deveui, sizeof(deveui));
     string2hex(deveui, buf, 8, true);
 }
@@ -276,13 +255,12 @@ void os_getAppEui(uint8_t *buf)
 {
     char appeui[24] = {0};
     char temp[24] = {0};
+
     HAL_PARAMS_Get_System_appeui(appeui, sizeof(appeui));
     system_get_product_id(temp, sizeof(temp));
-    //lora产品将product_id当做appeui
-    if((strcmp(temp, appeui) != 0) && ( strlen(temp) != 0)) {
-        strncpy(appeui,temp,strlen(temp));
+    if((strcmp(temp, appeui) != 0) && (strlen(temp) != 0)) {
+        strncpy(appeui, temp, strlen(temp));
         HAL_PARAMS_Set_System_appeui(appeui);
-        MOLMC_LOGD(TAG, "lorawan set appeui\r\n");
     }
     string2hex(appeui, buf, 8, true);
 }
@@ -290,6 +268,7 @@ void os_getAppEui(uint8_t *buf)
 void os_getAppKey(uint8_t *buf)
 {
     char appkey[36]={0};
+
     HAL_PARAMS_Get_System_appkey(appkey, sizeof(appkey));
     string2hex(appkey, buf, 16, false);
 }
@@ -339,14 +318,9 @@ void LoRaWanPause(void)
     loraRadioEvents.RxTimeout = OnLoRaRadioRxTimeout;
     loraRadioEvents.RxError = OnLoRaRadioRxError;
     loraRadioEvents.CadDone = OnLoRaRadioCadDone;
-    Radio.Init( &loraRadioEvents );
+    Radio.Init(&loraRadioEvents);
     interrupts();
-    Radio.SetModem( MODEM_LORA );
-
-    MOLMC_LOGD(TAG, "lora radio init!!!\r\n");
-    MOLMC_LOGD(TAG, "sync word = 0x%x\r\n", SX1276Read(0x39));
-    MOLMC_LOGD(TAG, "sx1278 version = 0x%x\r\n", SX1276GetVersion());
-    MOLMC_LOGD(TAG, "sx1278 freq = %d\r\n", SX1276LoRaGetRFFrequency());
+    Radio.SetModem(MODEM_LORA);
 }
 
 void LoRaWanResume(void)
@@ -356,24 +330,18 @@ void LoRaWanResume(void)
     LoRaMacPrimitives.MacMcpsConfirm = McpsConfirm;
     LoRaMacPrimitives.MacMcpsIndication = McpsIndication;
     LoRaMacPrimitives.MacMlmeConfirm = MlmeConfirm;
-    LoRaMacCallbacks.GetBatteryLevel = BoardGetBatteryLevel;
-    //LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_EU433);
-    LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LORAMAC_REGION_CN470);
-
-    MOLMC_LOGD(TAG, "loramac init!!!\r\n");
-    MOLMC_LOGD(TAG, "sync word = 0x%x\r\n", SX1276Read(0x39));
-    MOLMC_LOGD(TAG, "sx1278 version = 0x%x\r\n", SX1276GetVersion());
-    MOLMC_LOGD(TAG, "sx1278 freq = %d\r\n", SX1276LoRaGetRFFrequency());
+    LoRaMacCallbacks.GetBatteryLevel = LoRaWan._get_battery_level_callback;
+    LoRaMacInitialization( &LoRaMacPrimitives, &LoRaMacCallbacks, LoRaWan._region);
 
     MibRequestConfirm_t mibReq;
-
+    //设置ADR
     mibReq.Type = MIB_ADR;
     mibReq.Param.AdrEnable = LoRaWan.getAdrOn();
-    LoRaMacMibSetRequestConfirm( &mibReq );
-
+    LoRaMacMibSetRequestConfirm(&mibReq);
+    //设置为公共网络
     mibReq.Type = MIB_PUBLIC_NETWORK;
     mibReq.Param.EnablePublicNetwork = LORAWAN_PUBLIC_NETWORK;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    LoRaMacMibSetRequestConfirm(&mibReq);
 }
 
 void LoRaWanJoinOTAA(void)
@@ -395,13 +363,12 @@ void LoRaWanJoinOTAA(void)
     mlmeReq.Req.Join.AppKey = LoRaWan.macParams.appKey;
     //mlmeReq.Req.Join.NbTrials = LoRaWan._joinNbTrials;
 
-    LoRaMacMlmeRequest( &mlmeReq );
+    LoRaMacMlmeRequest(&mlmeReq);
 }
 
 bool LoRaWanJoinABP(void)
 {
     MibRequestConfirm_t mibReq;
-
     char devaddr[16] = {0}, nwkskey[36] = {0}, appskey[36] = {0};
 
     HAL_PARAMS_Get_System_devaddr(devaddr, sizeof(devaddr));
@@ -411,33 +378,25 @@ bool LoRaWanJoinABP(void)
     string2hex(nwkskey, LoRaWan.macParams.nwkSkey, 16, false);
     string2hex(appskey, LoRaWan.macParams.appSkey, 16, false);
 
-#if 0
-    MOLMC_LOGD(TAG, "devAddr: 0x%x\r\n", LoRaWan.macParams.devAddr);
-    MOLMC_LOGD(TAG, "nwkSkey:\r\n");
-    MOLMC_LOG_BUFFER_HEX(TAG, LoRaWan.macParams.nwkSkey, 16);
-    MOLMC_LOGD(TAG, "appSkey:\r\n");
-    MOLMC_LOG_BUFFER_HEX(TAG, LoRaWan.macParams.appSkey, 16);
-#endif
-
     mibReq.Type = MIB_NET_ID;
     mibReq.Param.NetID = LORAWAN_NETWORK_ID;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    LoRaMacMibSetRequestConfirm(&mibReq);
 
     mibReq.Type = MIB_DEV_ADDR;
     mibReq.Param.DevAddr = LoRaWan.macParams.devAddr;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    LoRaMacMibSetRequestConfirm(&mibReq);
 
     mibReq.Type = MIB_NWK_SKEY;
     mibReq.Param.NwkSKey = LoRaWan.macParams.nwkSkey;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    LoRaMacMibSetRequestConfirm(&mibReq);
 
     mibReq.Type = MIB_APP_SKEY;
     mibReq.Param.AppSKey = LoRaWan.macParams.appSkey;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    LoRaMacMibSetRequestConfirm(&mibReq);
 
     mibReq.Type = MIB_NETWORK_JOINED;
     mibReq.Param.IsNetworkJoined = true;
-    LoRaMacMibSetRequestConfirm( &mibReq );
+    LoRaMacMibSetRequestConfirm(&mibReq);
 
     INTOROBOT_LORAWAN_CONNECTED = false;
     INTOROBOT_LORAWAN_JOINED = true;
@@ -451,19 +410,19 @@ void LoRaWanGetABPParams(uint32_t &devAddr, uint8_t *nwkSkey, uint8_t *appSkey)
     LoRaMacStatus_t status;
 
     mibReq.Type = MIB_DEV_ADDR;
-    status = LoRaMacMibGetRequestConfirm( &mibReq );
+    status = LoRaMacMibGetRequestConfirm(&mibReq);
     if(status == LORAMAC_STATUS_OK) {
         devAddr = mibReq.Param.DevAddr;
     }
 
     mibReq.Type = MIB_NWK_SKEY;
-    status = LoRaMacMibGetRequestConfirm( &mibReq );
+    status = LoRaMacMibGetRequestConfirm(&mibReq);
     if(status == LORAMAC_STATUS_OK) {
         memcpy(nwkSkey,mibReq.Param.NwkSKey,16);
     }
 
     mibReq.Type = MIB_APP_SKEY;
-    status = LoRaMacMibGetRequestConfirm( &mibReq );
+    status = LoRaMacMibGetRequestConfirm(&mibReq);
     if(status == LORAMAC_STATUS_OK) {
         memcpy(appSkey,mibReq.Param.AppSKey,16);
     }

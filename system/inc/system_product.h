@@ -68,7 +68,6 @@ typedef enum
     SYSTEM_FEATURE_REGISTER_ENABLED,
     SYSTEM_FEATURE_LORAMAC_RUN_ENABLED,
     SYSTEM_FEATURE_CLOUD_DATA_ENCRYPT_ENABLED,
-    SYSTEM_FEATURE_STANDARD_LORAWAN_ENABLED,
     SYSTEM_FEATURE_MAX
 } system_feature_t;
 
@@ -76,28 +75,27 @@ class IntoRobotProduct
 {
 public:
     IntoRobotProduct() {
-        product_type = PRODUCT_TYPE_NOTE;                                       //产品类型  节点类型
-        strcpy(product_software_version, stringify(DEFAULT_PRODUCT_SOFTWARE_VERSION));  //产品软件版本号
-        strcpy(product_hardware_version, stringify(DEFAULT_PRODUCT_HARDWARE_VERSION));  //产品硬件版本号
-        strcpy(product_id, stringify(DEFAULT_PRODUCT_ID));                      //产品ID
-        strcpy(product_secret, stringify(DEFAULT_PRODUCT_SECRET));              //产品密钥
-        strcpy(board_id, stringify(PLATFORM_ID));                               //模组ID
-        strcpy(board_name, stringify(PLATFORM_NAME));                           //模组名称
+        product_type = PRODUCT_TYPE_NOTE;                                              //产品类型  节点类型
+        strcpy(product_software_version, stringify(DEFAULT_PRODUCT_SOFTWARE_VERSION)); //产品软件版本号
+        strcpy(product_hardware_version, stringify(DEFAULT_PRODUCT_HARDWARE_VERSION)); //产品硬件版本号
+        strcpy(product_id, stringify(DEFAULT_PRODUCT_ID));                             //产品ID
+        strcpy(product_secret, stringify(DEFAULT_PRODUCT_SECRET));                     //产品密钥
+        strcpy(board_id, stringify(PLATFORM_ID));                                      //模组ID
+        strcpy(board_name, stringify(PLATFORM_NAME));                                  //模组名称
 
-        feature_send_info_enable = true;            //发送设备信息  0:关闭  1:打开
-        feature_ota_update_enable = true;           //OTA自动升级   0:关闭  1:打开
+        feature_send_info_enable = true;            //发送设备信息     0:关闭  1:打开
+        feature_ota_update_enable = true;           //OTA自动升级      0:关闭  1:打开
 #if PLATFORM_ID == PLATFORM_W67 || PLATFORM_ID == PLATFORM_W323 || PLATFORM_ID == PLATFORM_L6
-        feature_config_save_enable = false;         //配置模式保存  0:关闭  1:打开
+        feature_config_save_enable = false;         //配置模式保存     0:关闭  1:打开
 #else
-        feature_config_save_enable = true;          //配置模式保存  0:关闭  1:打开
+        feature_config_save_enable = true;          //配置模式保存     0:关闭  1:打开
 #endif
-        feature_auto_config_process_enable = true;  //自动配置处理  0:关闭  1:打开
-        feature_auto_time_syn_enable = true;        //自动时间同步  0:关闭  1:打开
-        feature_data_protocol_enable = true;        //数据协议处理  0:关闭  1:打开
-        feature_register_enable = true;             //设备注册      0:关闭  1:打开
-        feature_loramac_run_enable = true;          //LoRaWan运行   0:关闭  1:打开
-        feature_cloud_data_encrypt_enable = true;   //云端通讯数据加密   0:关闭  1:打开 对MQTT通讯有效
-        feature_standard_lorawan_enable = false;    //标准LoRaWan运行    0:关闭  1:打开
+        feature_auto_config_process_enable = true;  //自动配置处理     0:关闭  1:打开
+        feature_auto_time_syn_enable = true;        //自动时间同步     0:关闭  1:打开
+        feature_data_protocol_enable = true;        //数据协议处理     0:关闭  1:打开
+        feature_register_enable = true;             //设备注册         0:关闭  1:打开
+        feature_loramac_run_enable = true;          //LoRaWan运行      0:关闭  1:打开
+        feature_cloud_data_encrypt_enable = true;   //云端通讯数据加密 0:关闭  1:打开 对MQTT通讯有效
     }
     ~IntoRobotProduct(){}
 
@@ -220,9 +218,6 @@ public:
             case SYSTEM_FEATURE_CLOUD_DATA_ENCRYPT_ENABLED:
                 return feature_cloud_data_encrypt_enable;
                 break;
-            case SYSTEM_FEATURE_STANDARD_LORAWAN_ENABLED:
-                return feature_standard_lorawan_enable;
-                break;
             default:
                 break;
         }
@@ -258,9 +253,6 @@ public:
             case SYSTEM_FEATURE_CLOUD_DATA_ENCRYPT_ENABLED:
                 feature_cloud_data_encrypt_enable = enabled;
                 break;
-            case SYSTEM_FEATURE_STANDARD_LORAWAN_ENABLED:
-                feature_standard_lorawan_enable = enabled;
-                break;
             default:
                 break;
         }
@@ -276,16 +268,15 @@ private:
     char board_id[17];                        //模块ID
     char board_name[17];                      //模块名称
 
-    bool feature_send_info_enable;            //发送设备信息  0:关闭  1:打开
-    bool feature_ota_update_enable;           //OTA升级       0:关闭  1:打开
-    bool feature_config_save_enable;          //配置模式保存  0:关闭  1:打开
-    bool feature_auto_config_process_enable;  //自动配置处理  0:关闭  1:打开
-    bool feature_auto_time_syn_enable;        //自动时间同步  0:关闭  1:打开
-    bool feature_data_protocol_enable;        //数据协议处理  0:关闭  1:打开
-    bool feature_register_enable;             //设备注册      0:关闭  1:打开
-    bool feature_loramac_run_enable;          //loramac是否自动激活   0:关闭  1:打开
-    bool feature_cloud_data_encrypt_enable;   //云端通讯数据加密   0:关闭  1:打开 对MQTT通讯有效
-    bool feature_standard_lorawan_enable;     //标准LoRaWan运行0关闭1打开
+    bool feature_send_info_enable;            //发送设备信息      0:关闭  1:打开
+    bool feature_ota_update_enable;           //OTA升级           0:关闭  1:打开
+    bool feature_config_save_enable;          //配置模式保存      0:关闭  1:打开
+    bool feature_auto_config_process_enable;  //自动配置处理      0:关闭  1:打开
+    bool feature_auto_time_syn_enable;        //自动时间同步      0:关闭  1:打开
+    bool feature_data_protocol_enable;        //数据协议处理      0:关闭  1:打开
+    bool feature_register_enable;             //设备注册          0:关闭  1:打开
+    bool feature_loramac_run_enable;          //LoRaWan运行       0:关闭  1:打开
+    bool feature_cloud_data_encrypt_enable;   //云端通讯数据加密  0:关闭  1:打开 对MQTT通讯有效
 };
 
 extern IntoRobotProduct &system_product_instance(void);

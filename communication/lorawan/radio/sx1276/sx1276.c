@@ -1753,30 +1753,30 @@ void SX1276OnDio3Irq( void )
 {
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        break;
-    case MODEM_LORA:
-        if( ( SX1276Read( REG_LR_IRQFLAGS ) & RFLR_IRQFLAGS_CADDETECTED ) == RFLR_IRQFLAGS_CADDETECTED )
-        {
-            // Clear Irq
-            SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_CADDETECTED | RFLR_IRQFLAGS_CADDONE );
-            if( ( RadioEvents != NULL ) && ( RadioEvents->CadDone != NULL ) )
+        case MODEM_FSK:
+            break;
+        case MODEM_LORA:
+            if( ( SX1276Read( REG_LR_IRQFLAGS ) & RFLR_IRQFLAGS_CADDETECTED ) == RFLR_IRQFLAGS_CADDETECTED )
             {
-                RadioEvents->CadDone( true );
+                // Clear Irq
+                SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_CADDETECTED | RFLR_IRQFLAGS_CADDONE );
+                if( ( RadioEvents != NULL ) && ( RadioEvents->CadDone != NULL ) )
+                {
+                    RadioEvents->CadDone( true );
+                }
             }
-        }
-        else
-        {
-            // Clear Irq
-            SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_CADDONE );
-            if( ( RadioEvents != NULL ) && ( RadioEvents->CadDone != NULL ) )
+            else
             {
-                RadioEvents->CadDone( false );
+                // Clear Irq
+                SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_CADDONE );
+                if( ( RadioEvents != NULL ) && ( RadioEvents->CadDone != NULL ) )
+                {
+                    RadioEvents->CadDone( false );
+                }
             }
-        }
-        break;
-    default:
-        break;
+            break;
+        default:
+            break;
     }
 }
 
@@ -1784,18 +1784,18 @@ void SX1276OnDio4Irq( void )
 {
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        {
-            if( SX1276.Settings.FskPacketHandler.PreambleDetected == false )
+        case MODEM_FSK:
             {
-                SX1276.Settings.FskPacketHandler.PreambleDetected = true;
+                if( SX1276.Settings.FskPacketHandler.PreambleDetected == false )
+                {
+                    SX1276.Settings.FskPacketHandler.PreambleDetected = true;
+                }
             }
-        }
-        break;
-    case MODEM_LORA:
-        break;
-    default:
-        break;
+            break;
+        case MODEM_LORA:
+            break;
+        default:
+            break;
     }
 }
 
@@ -1803,38 +1803,12 @@ void SX1276OnDio5Irq( void )
 {
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        break;
-    case MODEM_LORA:
-        break;
-    default:
-        break;
+        case MODEM_FSK:
+            break;
+        case MODEM_LORA:
+            break;
+        default:
+            break;
     }
-}
-
-// molmc add
-uint8_t SX1276GetVersion(void)
-{
-    return SX1276Read( REG_LR_VERSION );
-}
-
-uint32_t SX1276LoRaGetRFFrequency( void )
-{
-    uint32_t RFFrequency;
-    uint8_t freq[3];
-    SX1276ReadBuffer( REG_LR_FRFMSB, freq, 3 );
-    RFFrequency = ( ( uint32_t )freq[0] << 16 ) | ( ( uint32_t )freq[1] << 8 ) | ( ( uint32_t )freq[2]  );
-    RFFrequency = ( uint32_t )( ( double )RFFrequency * ( double )FREQ_STEP );
-
-    return RFFrequency;
-}
-
-uint32_t SX1276LoRaGetErrorRFFrequency( void )
-{
-    uint32_t errorFreq;
-    uint8_t freq[3];
-    SX1276ReadBuffer( REG_LR_FEIMSB, freq, 3 );
-    errorFreq = ( ( uint32_t )freq[0] << 16 ) | ( ( uint32_t )freq[1] << 8 ) | ( ( uint32_t )freq[2]  );
-    return errorFreq;
 }
 

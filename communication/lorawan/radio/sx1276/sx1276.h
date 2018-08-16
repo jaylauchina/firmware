@@ -427,13 +427,6 @@ void SX1276SetPublicNetwork( bool enable );
  */
 uint32_t SX1276GetWakeupTime( void );
 
-//******************************************************
-uint8_t SX1276GetVersion(void);
-
-uint32_t SX1276LoRaGetRFFrequency( void );
-
-uint32_t SX1276LoRaGetErrorRFFrequency( void );
-
 #ifdef __cplusplus
 }
 #endif

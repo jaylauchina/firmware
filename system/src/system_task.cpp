@@ -292,9 +292,9 @@ void manage_lorawan_connection(void)
         return;
     }
 
-    if(!INTOROBOT_LORAWAN_JOINED){
-        if(!INTOROBOT_LORAWAN_JOINING){
-            if(LoRaWanJoinIsEnabled()){
+    if(!INTOROBOT_LORAWAN_JOINED) {
+        if(!INTOROBOT_LORAWAN_JOINING) {
+            if(LoRaWanJoinIsEnabled()) {
                 MOLMC_LOGD(TAG, "lorawan start join\r\n");
                 INTOROBOT_LORAWAN_JOINING = true;
                 LoRaWanJoinEnable(false);
