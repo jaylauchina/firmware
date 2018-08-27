@@ -101,28 +101,6 @@ void HAL_I2C_Set_Callback_On_Request(HAL_I2C_Interface i2c, void (*function)(voi
 
 }
 
-/*******************************************************************************
- * Function Name  : HAL_I2C1_EV_Handler (Declared as weak in stm32_it.cpp)
- * Description    : This function handles I2C1 Event interrupt request(Only for Slave mode).
- * Input          : None.
- * Output         : None.
- * Return         : None.
- *******************************************************************************/
-void HAL_I2C1_EV_Handler(void)
-{
-}
-
-/*******************************************************************************
- * Function Name  : HAL_I2C1_ER_Handler (Declared as weak in stm32_it.cpp)
- * Description    : This function handles I2C1 Error interrupt request.
- * Input          : None.
- * Output         : None.
- * Return         : None.
- *******************************************************************************/
-void HAL_I2C1_ER_Handler(void)
-{
-}
-
 void HAL_I2C_Enable_DMA_Mode(HAL_I2C_Interface i2c, bool enable,void* reserved)
 {
 }

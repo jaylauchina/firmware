@@ -23,17 +23,17 @@
 */
 
 #include <string.h>
-#include "timer_hal.h"
-#include "delay_hal.h"
 #include "service_debug.h"
 
 extern "C" {
+
 #include "lwip/dns.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
 #include "esp_smartconfig.h"
 }
 
+#include "freertos/event_groups.h"
 #include "esp32-hal-wifi.h"
 #include "net_hal.h"
 
@@ -47,25 +47,6 @@ extern "C" {
 #define HALWIFI_DEBUG_D(...)
 #endif
 
-static ScanDoneCb _scanDoneCb = NULL;
-
-static volatile uint32_t esp32_wifi_timeout_start;
-static volatile uint32_t esp32_wifi_timeout_duration;
-
-inline void ARM_WIFI_TIMEOUT(uint32_t dur) {
-    esp32_wifi_timeout_start = HAL_Timer_Get_Milli_Seconds();
-    esp32_wifi_timeout_duration = dur;
-    //HALWIFI_DEBUG("esp32 WIFI WD Set %d\r\n",(dur));
-}
-inline bool IS_WIFI_TIMEOUT() {
-    return esp32_wifi_timeout_duration && ((HAL_Timer_Get_Milli_Seconds()-esp32_wifi_timeout_start)>esp32_wifi_timeout_duration);
-}
-
-inline void CLR_WIFI_TIMEOUT() {
-    esp32_wifi_timeout_duration = 0;
-    //HALWIFI_DEBUG("esp32 WIFI WD Cleared, was %d\r\n", esp32_wifi_timeout_duration);
-}
-
 #if CONFIG_FREERTOS_UNICORE
 #define ARDUINO_RUNNING_CORE 0
 #else
@@ -74,6 +55,169 @@ inline void CLR_WIFI_TIMEOUT() {
 
 static xQueueHandle _network_event_queue;
 static TaskHandle_t _network_event_task_handle = NULL;
+static EventGroupHandle_t _network_event_group = NULL;
+
+static esp_err_t _eventCallback(void *arg, system_event_t *event);
+static ScanDoneCb _scanDoneCb = NULL;
+
+static void _network_event_task(void * arg)
+{
+    system_event_t *event = NULL;
+    for (;;) {
+        if(xQueueReceive(_network_event_queue, &event, portMAX_DELAY) == pdTRUE){
+            _eventCallback(arg, event);
+        }
+    }
+    vTaskDelete(NULL);
+    _network_event_task_handle = NULL;
+}
+
+static esp_err_t _network_event_cb(void *arg, system_event_t *event)
+{
+    if (xQueueSend(_network_event_queue, &event, portMAX_DELAY) != pdPASS) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+static bool _start_network_event_task()
+{
+    if(!_network_event_group){
+        _network_event_group = xEventGroupCreate();
+        if(!_network_event_group){
+            HALWIFI_DEBUG("Network Event Group Create Failed!");
+            return false;
+        }
+        xEventGroupSetBits(_network_event_group, WIFI_DNS_IDLE_BIT);
+    }
+    if(!_network_event_queue){
+        _network_event_queue = xQueueCreate(32, sizeof(system_event_t *));
+        if(!_network_event_queue){
+            return false;
+        }
+    }
+    if(!_network_event_task_handle){
+        xTaskCreatePinnedToCore(_network_event_task, "network_event", 4096, NULL, 2, &_network_event_task_handle, ARDUINO_RUNNING_CORE);
+        if(!_network_event_task_handle){
+            return false;
+        }
+    }
+    return esp_event_loop_init(&_network_event_cb, NULL) == ESP_OK;
+}
+
+void tcpipInit()
+{
+    static bool initialized = false;
+    if(!initialized && _start_network_event_task()){
+        initialized = true;
+        tcpip_adapter_init();
+    }
+}
+
+static bool lowLevelInitDone = false;
+static bool wifiLowLevelInit(bool persistent)
+{
+    if(!lowLevelInitDone){
+        tcpipInit();
+        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+        esp_err_t err = esp_wifi_init(&cfg);
+        if(err){
+            return false;
+        }
+        if(!persistent){
+          esp_wifi_set_storage(WIFI_STORAGE_RAM);
+        }
+        lowLevelInitDone = true;
+    }
+    return true;
+}
+
+static bool wifiLowLevelDeinit()
+{
+    //deinit not working yet!
+    //esp_wifi_deinit();
+    return true;
+}
+
+static bool _esp_wifi_started = false;
+
+static bool espWiFiStart(bool persistent)
+{
+    if(_esp_wifi_started){
+        return true;
+    }
+    if(!wifiLowLevelInit(persistent)){
+        return false;
+    }
+    esp_err_t err = esp_wifi_start();
+    if (err != ESP_OK) {
+        wifiLowLevelDeinit();
+        return false;
+    }
+    _esp_wifi_started = true;
+    system_event_t event;
+    event.event_id = SYSTEM_EVENT_WIFI_READY;
+    _eventCallback(nullptr, &event);
+
+    return true;
+}
+
+static bool espWiFiStop()
+{
+    esp_err_t err;
+    if(!_esp_wifi_started) {
+        return true;
+    }
+    _esp_wifi_started = false;
+    err = esp_wifi_stop();
+    if(err) {
+        _esp_wifi_started = true;
+        return false;
+    }
+    return wifiLowLevelDeinit();
+}
+
+// -----------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------- Generic WiFi function -----------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------
+static bool _persistent = true;
+
+int esp32_setStatusBits(int bits)
+{
+    if(!_network_event_group){
+        return 0;
+    }
+    return xEventGroupSetBits(_network_event_group, bits);
+}
+
+int esp32_clearStatusBits(int bits)
+{
+    if(!_network_event_group){
+        return 0;
+    }
+    return xEventGroupClearBits(_network_event_group, bits);
+}
+
+int esp32_getStatusBits()
+{
+    if(!_network_event_group){
+        return 0;
+    }
+    return xEventGroupGetBits(_network_event_group);
+}
+
+int esp32_waitStatusBits(int bits, uint32_t timeout_ms)
+{
+    if(!_network_event_group){
+        return 0;
+    }
+    return xEventGroupWaitBits(
+        _network_event_group,    // The event group being tested.
+        bits,  // The bits within the event group to wait for.
+        pdFALSE,         // BIT_0 and BIT_4 should be cleared before returning.
+        pdTRUE,        // Don't wait for both bits, either bit will do.
+        timeout_ms / portTICK_PERIOD_MS ) & bits; // Wait a maximum of 100ms for either bit to be set.
+}
 
 #ifdef HAL_WIFI_DEBUG
 const char * system_event_reasons[] = { "UNSPECIFIED", "AUTH_EXPIRE", "AUTH_LEAVE", "ASSOC_EXPIRE", "ASSOC_TOOMANY", "NOT_AUTHED", "NOT_ASSOCED", "ASSOC_LEAVE", "ASSOC_NOT_AUTHED", "DISASSOC_PWRCAP_BAD", "DISASSOC_SUPCHAN_BAD", "IE_INVALID", "MIC_FAILURE", "4WAY_HANDSHAKE_TIMEOUT", "GROUP_KEY_UPDATE_TIMEOUT", "IE_IN_4WAY_DIFFERS", "GROUP_CIPHER_INVALID", "PAIRWISE_CIPHER_INVALID", "AKMP_INVALID", "UNSUPP_RSN_IE_VERSION", "INVALID_RSN_IE_CAP", "802_1X_AUTH_FAILED", "CIPHER_SUITE_REJECTED", "BEACON_TIMEOUT", "NO_AP_FOUND", "AUTH_FAIL", "ASSOC_FAIL", "HANDSHAKE_TIMEOUT" };
@@ -85,137 +229,71 @@ static esp_err_t _eventCallback(void *arg, system_event_t *event)
     if(event->event_id == SYSTEM_EVENT_SCAN_DONE) {
         HALWIFI_DEBUG("SYSTEM_EVENT_SCAN_DONE\r\n");
         _scanDoneCb();
-    }
-    else if(event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+    } else if(event->event_id == SYSTEM_EVENT_STA_START) {
+        //HALWIFI_DEBUG("SYSTEM_EVENT_STA_START\r\n");
+        esp32_setStatusBits(STA_STARTED_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_STA_STOP) {
+        //HALWIFI_DEBUG("SYSTEM_EVENT_STA_STOP\r\n");
+        esp32_clearStatusBits(STA_STARTED_BIT | STA_CONNECTED_BIT | STA_HAS_IP_BIT | STA_HAS_IP6_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_STA_CONNECTED) {
+        esp32_setStatusBits(STA_CONNECTED_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
         uint8_t reason = event->event_info.disconnected.reason;
         HALWIFI_DEBUG("SYSTEM_EVENT_STA_DISCONNECTED reason = %u - %s\r\n", reason, reason2str(reason));
         if(reason == WIFI_REASON_NO_AP_FOUND) {
         } else if(reason == WIFI_REASON_AUTH_FAIL || reason == WIFI_REASON_ASSOC_FAIL) {
         } else if(reason == WIFI_REASON_BEACON_TIMEOUT || reason == WIFI_REASON_HANDSHAKE_TIMEOUT) {
         } else if(reason == WIFI_REASON_AUTH_EXPIRE) {
-            HALWIFI_DEBUG("reconnect\r\n");
-            if(esp32_getAutoReconnect()) {
-                esp32_begin();
-            }
         } else {
+        }
+        esp32_clearStatusBits(STA_CONNECTED_BIT | STA_HAS_IP_BIT | STA_HAS_IP6_BIT);
+        if(((reason == WIFI_REASON_AUTH_EXPIRE) ||
+            (reason >= WIFI_REASON_BEACON_TIMEOUT && reason != WIFI_REASON_AUTH_FAIL)) &&
+            esp32_getAutoReconnect())
+        {
+            esp32_enableSTA(false);
+            esp32_enableSTA(true);
+            esp32_begin();
         }
         HAL_NET_notify_disconnected();
-    }
-    else if(event->event_id == SYSTEM_EVENT_STA_START) {
-        //HALWIFI_DEBUG("SYSTEM_EVENT_STA_START\r\n");
-    }
-    else if(event->event_id == SYSTEM_EVENT_STA_STOP) {
-        //HALWIFI_DEBUG("SYSTEM_EVENT_STA_STOP\r\n");
-    }
-    else if(event->event_id == SYSTEM_EVENT_STA_GOT_IP) {
+    } else if(event->event_id == SYSTEM_EVENT_STA_GOT_IP) {
         HALWIFI_DEBUG("SYSTEM_EVENT_STA_GOT_IP\r\n");
-        /*
-           tcpip_adapter_ip_info_t ip;
-           tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip);
-           HALWIFI_DEBUG("%x\r\n", ip.ip.addr);
-           */
+        esp32_setStatusBits(STA_HAS_IP_BIT | STA_CONNECTED_BIT);
         HAL_NET_notify_dhcp(true);
         HAL_NET_notify_connected();
+    } else if(event->event_id == SYSTEM_EVENT_STA_LOST_IP) {
+        esp32_clearStatusBits(STA_HAS_IP_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_AP_START) {
+        esp32_setStatusBits(AP_STARTED_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_AP_STOP) {
+        esp32_clearStatusBits(AP_STARTED_BIT | AP_HAS_CLIENT_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_AP_STACONNECTED) {
+        esp32_setStatusBits(AP_HAS_CLIENT_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_AP_STADISCONNECTED) {
+        wifi_sta_list_t clients;
+        if(esp_wifi_ap_get_sta_list(&clients) != ESP_OK || !clients.num){
+            esp32_clearStatusBits(AP_HAS_CLIENT_BIT);
+        }
+    } else if(event->event_id == SYSTEM_EVENT_ETH_START) {
+        esp32_setStatusBits(ETH_STARTED_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_ETH_STOP) {
+        esp32_clearStatusBits(ETH_STARTED_BIT | ETH_CONNECTED_BIT | ETH_HAS_IP_BIT | ETH_HAS_IP6_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_ETH_CONNECTED) {
+        esp32_setStatusBits(ETH_CONNECTED_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_ETH_DISCONNECTED) {
+        esp32_clearStatusBits(ETH_CONNECTED_BIT | ETH_HAS_IP_BIT | ETH_HAS_IP6_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_ETH_GOT_IP) {
+        esp32_setStatusBits(ETH_CONNECTED_BIT | ETH_HAS_IP_BIT);
+    } else if(event->event_id == SYSTEM_EVENT_GOT_IP6) {
+        if(event->event_info.got_ip6.if_index == TCPIP_ADAPTER_IF_AP){
+            esp32_setStatusBits(AP_HAS_IP6_BIT);
+        } else if(event->event_info.got_ip6.if_index == TCPIP_ADAPTER_IF_STA){
+            esp32_setStatusBits(STA_CONNECTED_BIT | STA_HAS_IP6_BIT);
+        } else if(event->event_info.got_ip6.if_index == TCPIP_ADAPTER_IF_ETH){
+            esp32_setStatusBits(ETH_CONNECTED_BIT | ETH_HAS_IP6_BIT);
+        }
     }
     return ESP_OK;
-}
-
-static void _network_event_task(void * arg){
-    system_event_t *event = NULL;
-    for (;;) {
-        if(xQueueReceive(_network_event_queue, &event, 0) == pdTRUE){
-            _eventCallback(NULL, event);
-        } else {
-            vTaskDelay(1);
-        }
-    }
-    vTaskDelete(NULL);
-    _network_event_task_handle = NULL;
-}
-
-static esp_err_t _network_event_cb(void *arg, system_event_t *event){
-    if (xQueueSend(_network_event_queue, &event, portMAX_DELAY) != pdPASS) {
-        return ESP_FAIL;
-    }
-    return ESP_OK;
-}
-
-static void _start_network_event_task(){
-    if(!_network_event_queue){
-        _network_event_queue = xQueueCreate(32, sizeof(system_event_t *));
-        if(!_network_event_queue){
-            return;
-        }
-    }
-    if(!_network_event_task_handle){
-        xTaskCreatePinnedToCore(_network_event_task, "network_event", 4096, NULL, 2, &_network_event_task_handle, ARDUINO_RUNNING_CORE);
-        if(!_network_event_task_handle){
-            return;
-        }
-    }
-    esp_event_loop_init(&_network_event_cb, NULL);
-}
-
-void tcpipInit(){
-    static bool initialized = false;
-    if(!initialized){
-        initialized = true;
-        _start_network_event_task();
-        tcpip_adapter_init();
-    }
-}
-
-static bool wifiLowLevelInit(){
-    static bool lowLevelInitDone = false;
-    if(!lowLevelInitDone){
-        tcpipInit();
-        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-        esp_err_t err = esp_wifi_init(&cfg);
-        if(err){
-            return false;
-        }
-        esp_wifi_set_storage(WIFI_STORAGE_FLASH);
-        esp_wifi_set_mode(WIFI_MODE_NULL);
-        lowLevelInitDone = true;
-    }
-    return true;
-}
-
-static bool wifiLowLevelDeinit(){
-    //deinit not working yet!
-    //esp_wifi_deinit();
-    return true;
-}
-
-static bool _esp_wifi_started = false;
-
-static bool espWiFiStart() {
-    if(_esp_wifi_started) {
-        return true;
-    }
-    if(!wifiLowLevelInit()) {
-        return false;
-    }
-    esp_err_t err = esp_wifi_start();
-    if (err != ESP_OK) {
-        wifiLowLevelDeinit();
-        return false;
-    }
-    _esp_wifi_started = true;
-    return true;
-}
-
-static bool espWiFiStop() {
-    esp_err_t err;
-    if(!_esp_wifi_started) {
-        return true;
-    }
-    err = esp_wifi_stop();
-    if(err) {
-        return false;
-    }
-    _esp_wifi_started = false;
-    return wifiLowLevelDeinit();
 }
 
 void esp32_setScanDoneCb(ScanDoneCb cb)
@@ -225,37 +303,73 @@ void esp32_setScanDoneCb(ScanDoneCb cb)
     }
 }
 
+/**
+ * Return the current channel associated with the network
+ * @return channel (1-13)
+ */
+int32_t esp32_getChannel(void)
+{
+    uint8_t primaryChan = 0;
+    wifi_second_chan_t secondChan = WIFI_SECOND_CHAN_NONE;
+    if(!lowLevelInitDone){
+        return primaryChan;
+    }
+    esp_wifi_get_channel(&primaryChan, &secondChan);
+    return primaryChan;
+}
+
+/**
+ * store WiFi config in SDK flash area
+ * @param persistent
+ */
+void esp32_setPersistent(bool persistent)
+{
+    _persistent = persistent;
+}
+
 bool esp32_setMode(wifi_mode_t m)
 {
     wifi_mode_t cm = esp32_getMode();
-    if(cm == WIFI_MODE_MAX) {
-        return false;
-    }
     if(cm == m) {
         return true;
     }
+    if(!cm && m){
+        if(!espWiFiStart(_persistent)){
+            return false;
+        }
+    } else if(cm && !m){
+        return espWiFiStop();
+    }
+
     esp_err_t err;
     err = esp_wifi_set_mode(m);
     if(err) {
         return false;
     }
-    if(m) {
-        return espWiFiStart();
-    }
-    return espWiFiStop();
+    return true;
 }
-
+/**
+ * get WiFi mode
+ * @return WiFiMode
+ */
 wifi_mode_t esp32_getMode()
 {
-    if(!wifiLowLevelInit()){
-        return WIFI_MODE_MAX;
+    if(!_esp_wifi_started){
+        return WIFI_MODE_NULL;
     }
-
-    uint8_t mode;
-    esp_wifi_get_mode((wifi_mode_t*)&mode);
-    return (wifi_mode_t)mode;
+    wifi_mode_t mode;
+    if(esp_wifi_get_mode(&mode) == ESP_ERR_WIFI_NOT_INIT){
+        HALWIFI_DEBUG("WiFi not started");
+        return WIFI_MODE_NULL;
+    }
+    return mode;
 }
 
+/**
+ * control STA mode
+ * @param enable bool
+ * @return ok
+ */
 bool esp32_enableSTA(bool enable)
 {
     wifi_mode_t currentMode = esp32_getMode();
@@ -264,14 +378,17 @@ bool esp32_enableSTA(bool enable)
     if(isEnabled != enable) {
         if(enable) {
             return esp32_setMode((wifi_mode_t)(currentMode | WIFI_MODE_STA));
-        } else {
-            return esp32_setMode((wifi_mode_t)(currentMode & (~WIFI_MODE_STA)));
         }
-    } else {
-        return true;
+        return esp32_setMode((wifi_mode_t)(currentMode & (~WIFI_MODE_STA)));
     }
+    return true;
 }
 
+/**
+ * control AP mode
+ * @param enable bool
+ * @return ok
+ */
 bool esp32_enableAP(bool enable)
 {
     wifi_mode_t currentMode = esp32_getMode();
@@ -280,12 +397,66 @@ bool esp32_enableAP(bool enable)
     if(isEnabled != enable) {
         if(enable) {
             return esp32_setMode((wifi_mode_t)(currentMode | WIFI_MODE_AP));
-        } else {
-            return esp32_setMode((wifi_mode_t)(currentMode & (~WIFI_MODE_AP)));
         }
-    } else {
-        return true;
+        return esp32_setMode((wifi_mode_t)(currentMode & (~WIFI_MODE_AP)));
     }
+    return true;
+}
+
+/**
+ * control modem sleep when only in STA mode
+ * @param enable bool
+ * @return ok
+ */
+bool esp32_setSleep(bool enable)
+{
+    if((esp32_getMode() & WIFI_MODE_STA) == 0) {
+        HALWIFI_DEBUG("STA has not been started");
+        return false;
+    }
+    return esp_wifi_set_ps(enable?WIFI_PS_MIN_MODEM:WIFI_PS_NONE) == ESP_OK;
+}
+
+/**
+ * get modem sleep enabled
+ * @return true if modem sleep is enabled
+ */
+bool esp32_getSleep()
+{
+    wifi_ps_type_t ps;
+    if((esp32_getMode() & WIFI_MODE_STA) == 0) {
+        HALWIFI_DEBUG("STA has not been started");
+        return false;
+    }
+    if(esp_wifi_get_ps(&ps) == ESP_OK) {
+        return ps == WIFI_PS_MIN_MODEM;
+    }
+    return false;
+}
+
+/**
+ * control wifi tx power
+ * @param power enum maximum wifi tx power
+ * @return ok
+ */
+bool esp32_setTxPower(wifi_power_t power){
+    if((esp32_getStatusBits() & (STA_STARTED_BIT | AP_STARTED_BIT)) == 0) {
+        HALWIFI_DEBUG("Neither AP or STA has been started");
+        return false;
+    }
+    return esp_wifi_set_max_tx_power(power) == ESP_OK;
+}
+
+wifi_power_t esp32_getTxPower(){
+    int8_t power;
+    if((esp32_getStatusBits() & (STA_STARTED_BIT | AP_STARTED_BIT)) == 0) {
+        HALWIFI_DEBUG("Neither AP or STA has been started");
+        return WIFI_POWER_19_5dBm;
+    }
+    if(esp_wifi_get_max_tx_power(&power)) {
+        return WIFI_POWER_19_5dBm;
+    }
+    return (wifi_power_t)power;
 }
 
 uint8_t* esp32_getMacAddress(uint8_t* mac)
@@ -356,6 +527,22 @@ bool esp32_begin(void)
     return true;
 }
 
+int esp32_connect()
+{
+    if ( esp_wifi_connect() == ESP_OK ) {
+        return 0;
+    }
+    return 1;
+}
+
+int esp32_disconnect()
+{
+    if ( esp_wifi_disconnect() == ESP_OK ) {
+        return 0;
+    }
+    return 1;
+}
+
 static bool _smartConfigStarted = false;
 static bool _smartConfigDone = false;
 
@@ -420,16 +607,31 @@ static bool esp32_smartConfigDone()
     return _smartConfigDone;
 }
 
-static bool _dns_busy = false;
+// -----------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------ Generic Network function ---------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------
 
+/**
+ * DNS callback
+ * @param name
+ * @param ipaddr
+ * @param callback_arg
+ */
 static void wifi_dns_found_callback(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
 {
     if(ipaddr) {
         (*reinterpret_cast<uint32_t*>(callback_arg)) = ipaddr->u_addr.ip4.addr;
     }
-    _dns_busy = false;
+    xEventGroupSetBits(_network_event_group, WIFI_DNS_DONE_BIT);
 }
 
+/**
+ * Resolve the given hostname to an IP address.
+ * @param hostname     Name to be resolved
+ * @param ip_addr       IPAddress structure to store the returned IP address
+ * @return 1 if aIPAddrString was successfully converted to an IP address,
+ *          else error code
+ */
 int esp32_gethostbyname(const char* hostname, uint16_t hostnameLen, uint32_t &ip_addr)
 {
     ip_addr_t addr;
@@ -445,40 +647,19 @@ int esp32_gethostbyname(const char* hostname, uint16_t hostnameLen, uint32_t &ip
         return 0;
     }
 
-    _dns_busy = true;
+    esp32_waitStatusBits(WIFI_DNS_IDLE_BIT, 5000);
+    esp32_clearStatusBits(WIFI_DNS_IDLE_BIT);
     err_t err = dns_gethostbyname(hostname, &addr, &wifi_dns_found_callback, &ip_addr);
     if(err == ERR_OK && addr.u_addr.ip4.addr) {
         ip_addr = addr.u_addr.ip4.addr;
-        _dns_busy = false;
     } else if(err == ERR_INPROGRESS) {
-        ARM_WIFI_TIMEOUT(2000);
-        while (_dns_busy) {
-            HAL_Delay_Milliseconds(100);
-            if(IS_WIFI_TIMEOUT()) {
-                CLR_WIFI_TIMEOUT();
-                break;
-            }
-        }
-    } else {
-        _dns_busy = false;
-        return 1;
+        esp32_waitStatusBits(WIFI_DNS_DONE_BIT, 4000);
+        esp32_clearStatusBits(WIFI_DNS_DONE_BIT);
     }
-    return 0;
-}
-
-int esp32_connect()
-{
-    if ( esp_wifi_connect() == ESP_OK ) {
-        return 0;
+    esp32_setStatusBits(WIFI_DNS_IDLE_BIT);
+    if((uint32_t)ip_addr == 0){
+        HALWIFI_DEBUG("DNS Failed for %s", hostname);
     }
-    return 1;
-}
-
-int esp32_disconnect()
-{
-    if ( esp_wifi_disconnect() == ESP_OK ) {
-        return 0;
-    }
-    return 1;
+    return (uint32_t)ip_addr != 0;
 }
 

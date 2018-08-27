@@ -22,7 +22,7 @@
  *
  */
 
-#include<stdlib.h>
+#include <stdlib.h>
 extern "C" {
 #include "libb64/cdecode.h"
 #include "libb64/cencode.h"
@@ -35,7 +35,8 @@ extern "C" {
  * @param length size_t
  * @return String
  */
-String base64::encode(uint8_t * data, size_t length) {
+String base64::encode(uint8_t * data, size_t length)
+{
     // base64 needs more size then the source data
     size_t size = ((length * 1.6f) + 1);
     char * buffer = (char *) malloc(size);
@@ -57,7 +58,8 @@ String base64::encode(uint8_t * data, size_t length) {
  * @param text String
  * @return String
  */
-String base64::encode(String text) {
+String base64::encode(String text)
+{
     return base64::encode((uint8_t *) text.c_str(), text.length());
 }
 
