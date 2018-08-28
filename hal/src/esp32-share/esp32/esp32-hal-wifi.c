@@ -24,15 +24,10 @@
 
 #include <string.h>
 #include "service_debug.h"
-
-extern "C" {
-
 #include "lwip/dns.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
 #include "esp_smartconfig.h"
-}
-
 #include "freertos/event_groups.h"
 #include "esp32-hal-wifi.h"
 #include "net_hal.h"
@@ -80,7 +75,7 @@ static esp_err_t _network_event_cb(void *arg, system_event_t *event)
     return ESP_OK;
 }
 
-static bool _start_network_event_task()
+static bool _start_network_event_task(void)
 {
     if(!_network_event_group){
         _network_event_group = xEventGroupCreate();
@@ -105,7 +100,7 @@ static bool _start_network_event_task()
     return esp_event_loop_init(&_network_event_cb, NULL) == ESP_OK;
 }
 
-void tcpipInit()
+void tcpipInit(void)
 {
     static bool initialized = false;
     if(!initialized && _start_network_event_task()){
@@ -132,7 +127,7 @@ static bool wifiLowLevelInit(bool persistent)
     return true;
 }
 
-static bool wifiLowLevelDeinit()
+static bool wifiLowLevelDeinit(void)
 {
     //deinit not working yet!
     //esp_wifi_deinit();
@@ -157,12 +152,12 @@ static bool espWiFiStart(bool persistent)
     _esp_wifi_started = true;
     system_event_t event;
     event.event_id = SYSTEM_EVENT_WIFI_READY;
-    _eventCallback(nullptr, &event);
+    _eventCallback(NULL, &event);
 
     return true;
 }
 
-static bool espWiFiStop()
+static bool espWiFiStop(void)
 {
     esp_err_t err;
     if(!_esp_wifi_started) {
@@ -198,7 +193,7 @@ int esp32_clearStatusBits(int bits)
     return xEventGroupClearBits(_network_event_group, bits);
 }
 
-int esp32_getStatusBits()
+int esp32_getStatusBits(void)
 {
     if(!_network_event_group){
         return 0;
@@ -352,7 +347,7 @@ bool esp32_setMode(wifi_mode_t m)
  * get WiFi mode
  * @return WiFiMode
  */
-wifi_mode_t esp32_getMode()
+wifi_mode_t esp32_getMode(void)
 {
     if(!_esp_wifi_started){
         return WIFI_MODE_NULL;
@@ -421,7 +416,7 @@ bool esp32_setSleep(bool enable)
  * get modem sleep enabled
  * @return true if modem sleep is enabled
  */
-bool esp32_getSleep()
+bool esp32_getSleep(void)
 {
     wifi_ps_type_t ps;
     if((esp32_getMode() & WIFI_MODE_STA) == 0) {
@@ -439,7 +434,8 @@ bool esp32_getSleep()
  * @param power enum maximum wifi tx power
  * @return ok
  */
-bool esp32_setTxPower(wifi_power_t power){
+bool esp32_setTxPower(wifi_power_t power)
+{
     if((esp32_getStatusBits() & (STA_STARTED_BIT | AP_STARTED_BIT)) == 0) {
         HALWIFI_DEBUG("Neither AP or STA has been started");
         return false;
@@ -447,7 +443,8 @@ bool esp32_setTxPower(wifi_power_t power){
     return esp_wifi_set_max_tx_power(power) == ESP_OK;
 }
 
-wifi_power_t esp32_getTxPower(){
+wifi_power_t esp32_getTxPower(void)
+{
     int8_t power;
     if((esp32_getStatusBits() & (STA_STARTED_BIT | AP_STARTED_BIT)) == 0) {
         HALWIFI_DEBUG("Neither AP or STA has been started");
@@ -482,7 +479,7 @@ bool esp32_setAutoConnect(bool autoConnect)
     return ret;
 }
 
-bool esp32_getAutoConnect()
+bool esp32_getAutoConnect(void)
 {
     bool autoConnect;
     esp_wifi_get_auto_connect(&autoConnect);
@@ -527,7 +524,7 @@ bool esp32_begin(void)
     return true;
 }
 
-int esp32_connect()
+int esp32_connect(void)
 {
     if ( esp_wifi_connect() == ESP_OK ) {
         return 0;
@@ -535,7 +532,7 @@ int esp32_connect()
     return 1;
 }
 
-int esp32_disconnect()
+int esp32_disconnect(void)
 {
     if ( esp_wifi_disconnect() == ESP_OK ) {
         return 0;
@@ -546,12 +543,12 @@ int esp32_disconnect()
 static bool _smartConfigStarted = false;
 static bool _smartConfigDone = false;
 
-static void smartConfigCallback(uint32_t st, void* result)
+static void smartConfigCallback(uint32_t st, void *result)
 {
     smartconfig_status_t status = (smartconfig_status_t) st;
     HALWIFI_DEBUG("beginSmartConfig status = %d\r\n", status);
     if (status == SC_STATUS_LINK) {
-        wifi_sta_config_t *sta_conf = reinterpret_cast<wifi_sta_config_t *>(result);
+        wifi_sta_config_t *sta_conf = (wifi_sta_config_t *)result;
         HALWIFI_DEBUG("ssid     = %s\r\n", sta_conf->ssid);
         HALWIFI_DEBUG("password = %s\r\n", sta_conf->password);
         esp_wifi_set_config(WIFI_IF_STA, (wifi_config_t *)sta_conf);
@@ -561,7 +558,7 @@ static void smartConfigCallback(uint32_t st, void* result)
     }
 }
 
-bool esp32_beginSmartConfig()
+bool esp32_beginSmartConfig(void)
 {
     HALWIFI_DEBUG("esp32_beginSmartConfig\r\n");
     if (_smartConfigStarted) {
@@ -575,7 +572,7 @@ bool esp32_beginSmartConfig()
     esp_wifi_disconnect();
 
     esp_err_t err;
-    err = esp_smartconfig_start(reinterpret_cast<sc_callback_t>(&smartConfigCallback), 1);
+    err = esp_smartconfig_start((sc_callback_t)(&smartConfigCallback), 1);
     if (err == ESP_OK) {
         _smartConfigStarted = true;
         _smartConfigDone = false;
@@ -584,7 +581,7 @@ bool esp32_beginSmartConfig()
     return false;
 }
 
-bool esp32_stopSmartConfig()
+bool esp32_stopSmartConfig(void)
 {
     HALWIFI_DEBUG("esp8266_stopSmartConfig\r\n");
     if (!_smartConfigStarted) {
@@ -599,7 +596,7 @@ bool esp32_stopSmartConfig()
     return false;
 }
 
-static bool esp32_smartConfigDone()
+bool esp32_smartConfigDone(void)
 {
     if(!_smartConfigStarted) {
         return false;
@@ -620,7 +617,7 @@ static bool esp32_smartConfigDone()
 static void wifi_dns_found_callback(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
 {
     if(ipaddr) {
-        (*reinterpret_cast<uint32_t*>(callback_arg)) = ipaddr->u_addr.ip4.addr;
+        (*(uint32_t*)(callback_arg)) = ipaddr->u_addr.ip4.addr;
     }
     xEventGroupSetBits(_network_event_group, WIFI_DNS_DONE_BIT);
 }
@@ -632,34 +629,31 @@ static void wifi_dns_found_callback(const char *name, const ip_addr_t *ipaddr, v
  * @return 1 if aIPAddrString was successfully converted to an IP address,
  *          else error code
  */
-int esp32_gethostbyname(const char* hostname, uint16_t hostnameLen, uint32_t &ip_addr)
+int esp32_gethostbyname(const char* hostname, uint16_t hostnameLen, uint32_t *ip_addr)
 {
     ip_addr_t addr;
 
     if(!strcmp(hostname, "255.255.255.255")) {
-        ip_addr = IPADDR_NONE;
+        *ip_addr = IPADDR_NONE;
         return 0;
     }
 
     addr.u_addr.ip4.addr = ipaddr_addr(hostname);
     if (addr.u_addr.ip4.addr != IPADDR_NONE) {
-        ip_addr = addr.u_addr.ip4.addr;
+        *ip_addr = addr.u_addr.ip4.addr;
         return 0;
     }
 
     esp32_waitStatusBits(WIFI_DNS_IDLE_BIT, 5000);
     esp32_clearStatusBits(WIFI_DNS_IDLE_BIT);
-    err_t err = dns_gethostbyname(hostname, &addr, &wifi_dns_found_callback, &ip_addr);
+    err_t err = dns_gethostbyname(hostname, &addr, &wifi_dns_found_callback, ip_addr);
     if(err == ERR_OK && addr.u_addr.ip4.addr) {
-        ip_addr = addr.u_addr.ip4.addr;
+        *ip_addr = addr.u_addr.ip4.addr;
     } else if(err == ERR_INPROGRESS) {
         esp32_waitStatusBits(WIFI_DNS_DONE_BIT, 4000);
         esp32_clearStatusBits(WIFI_DNS_DONE_BIT);
     }
     esp32_setStatusBits(WIFI_DNS_IDLE_BIT);
-    if((uint32_t)ip_addr == 0){
-        HALWIFI_DEBUG("DNS Failed for %s", hostname);
-    }
-    return (uint32_t)ip_addr != 0;
+    return ((*ip_addr) == 0) ? -1 : 0;
 }
 

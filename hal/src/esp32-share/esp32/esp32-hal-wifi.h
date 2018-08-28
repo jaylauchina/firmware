@@ -66,13 +66,13 @@ typedef void (*ScanDoneCb)(void);
 
 int esp32_setStatusBits(int bits);
 int esp32_clearStatusBits(int bits);
-int esp32_getStatusBits();
+int esp32_getStatusBits(void);
 int esp32_waitStatusBits(int bits, uint32_t timeout_ms);
 void esp32_setScanDoneCb(ScanDoneCb cb);
 int32_t esp32_getChannel(void);
 void esp32_setPersistent(bool persistent);
 bool esp32_setMode(wifi_mode_t m);
-wifi_mode_t esp32_getMode();
+wifi_mode_t esp32_getMode(void);
 bool esp32_enableSTA(bool enable);
 bool esp32_enableAP(bool enable);
 uint8_t* esp32_getMacAddress(uint8_t* mac);
@@ -80,17 +80,17 @@ bool esp32_setDHCP(char enable);
 bool esp32_setAutoConnect(bool autoConnect);
 int32_t esp32_getRSSI(void);
 bool esp32_setAutoConnect(bool autoConnect);
-bool esp32_getAutoConnect();
+bool esp32_getAutoConnect(void);
 bool esp32_setAutoReconnect(bool autoReconnect);
 bool esp32_getAutoReconnect(void);
 int esp32_setConfig(wifi_config_t *conf);
 bool esp32_begin(void);
-int esp32_connect();
-int esp32_disconnect();
-bool esp32_beginSmartConfig();
-bool esp32_stopSmartConfig();
-bool esp32_smartConfigDone();
-int esp32_gethostbyname(const char* hostname, uint16_t hostnameLen, uint32_t &ip_addr);
+int esp32_connect(void);
+int esp32_disconnect(void);
+bool esp32_beginSmartConfig(void);
+bool esp32_stopSmartConfig(void);
+bool esp32_smartConfigDone(void);
+int esp32_gethostbyname(const char* hostname, uint16_t hostnameLen, uint32_t *ip_addr);
 
 #ifdef __cplusplus
 }
